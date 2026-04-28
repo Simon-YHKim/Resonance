@@ -1,0 +1,20 @@
+{
+  "name": "잔향 — Resonance",
+  "short_name": "잔향",
+  "description": "당신의 이름은, 잔향이 된다.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F0E14",
+  "theme_color": "#0F0E14",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

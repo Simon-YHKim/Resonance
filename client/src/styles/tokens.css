@@ -1,0 +1,30 @@
+/* 잔향 디자인 토큰 — v2.2 K-콘텐츠 모던 톤 (어두운 파스텔 멜랑콜리)
+ * v2.4 §28.5 — MVP 3프리셋 중 Phase 0는 "기본 (잔향)" 1개만 구현 */
+
+:root {
+  /* Background — 깊은 자정 */
+  --bg-primary: #0F0E14;
+  --bg-secondary: #1A1822;
+  --bg-elevated: #24202E;
+
+  /* Foreground — 바랜 종이 */
+  --fg-primary: #E8E3D5;
+  --fg-muted: #8B8595;
+  --fg-dim: #5A5566;
+
+  /* Accents */
+  --accent-resonance: #B89DD0;  /* 잔향 — 흐릿한 라벤더 */
+  --accent-origin: #D4A574;     /* 원 — 빛 바랜 황금 */
+
+  /* Semantic */
+  --danger: #C97373;
+  --success: #8FAE8B;
+
+  /* Typography */
+  --font-display: 'Noto Serif KR', 'Apple SD Gothic Neo', serif;
+  --font-body: 'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif;
+
+  /* Layout */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}

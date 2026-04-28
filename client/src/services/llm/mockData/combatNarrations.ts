@@ -1,0 +1,94 @@
+/* 잊혀진 자 1체 + 액션별 사전 생성 묘사 (v1.0 §1-4 패턴 #4)
+ * Phase 0는 1종(어린 시절의 잊혀진 자) — Phase 2에서 5체로 확장. */
+
+import type { CombatAction } from '@/types/game';
+
+export interface EnemyArchetype {
+  name: string;
+  description: string;
+  /** 첫 조우 묘사 — the Voice 화법 */
+  encounter: string;
+  hp: number;
+}
+
+export const FORGETTER_OF_CHILDHOOD: EnemyArchetype = {
+  name: '잊혀진 자 — 어린 시절의 잔해',
+  description:
+    '한쪽 무릎이 꺾인 채 천천히 다가온다. 얼굴은 안개에 가려 보이지 않는다. 손에 든 것은… 작은 가방이었던 것 같다.',
+  encounter:
+    '거리의 끝에서 익숙한 그림자가 일어선다. the Voice가 속삭인다 — "저 자는 너의 어떤 부분을 잊은 자다."',
+  hp: 60,
+};
+
+interface NarrationVariants {
+  /** 적 HP 비율(1.0 → 0.0)별 묘사 변주 — 0.66/0.33/0.0 임계 */
+  high: string[];
+  mid: string[];
+  low: string[];
+}
+
+const ATTACK: NarrationVariants = {
+  high: [
+    '너의 손이 익숙한 호선을 그린다. 잊혀진 자가 한 발짝 물러선다. 그것의 안개가 조금 걷힌다.',
+    '너는 망설임 없이 들어간다. 잿빛 외투의 자락이 너의 결단을 받아낸다.',
+    '바람이 너의 어깨를 스친다. 잊혀진 자는 자신이 잊은 자세로 비틀거린다.',
+  ],
+  mid: [
+    '두 번째 일격이 그림자의 무릎을 꺾는다. 안개 사이로 어렴풋한 얼굴의 윤곽이 드러난다.',
+    '너는 더 깊이 들어간다. 이 거리는 너의 것이었다.',
+    '소리 없는 신음. 잊혀진 자가 한 박자 늦게 너를 본다.',
+  ],
+  low: [
+    '마지막 호흡. 잊혀진 자가 천천히 무너진다. 그것이 너에게 무언가를 떨어뜨린다 — 너만이 알아보는 것을.',
+    '안개가 걷힌다. 잊혀진 자의 자리에 작은 가방 하나가 남아 있다.',
+    '잔향이 거리를 따라 길게 늘어선다. 너는 그것의 마지막을 본다.',
+  ],
+};
+
+const DIALOGUE: NarrationVariants = {
+  high: [
+    '"…너는 누구냐?" 잊혀진 자의 목소리는 너의 어린 시절의 어느 오후를 닮아 있다.',
+    '너는 묻는다. 잊혀진 자는 답하지 않는다. 그러나 한 발짝 가까이 다가온다.',
+    '그것은 너의 이름을 부르려다 멈춘다. 입술이 떨린다.',
+  ],
+  mid: [
+    '"…나도, 그 자리에 있었다." 잊혀진 자가 안개 너머에서 작게 말한다.',
+    '너의 말이 그것의 호선을 무너뜨린다. 공격할 의지가 옅어지는 것이 보인다.',
+    '잊혀진 자는 너의 어깨 너머를 본다. 그것이 보고 있는 것은 너의 과거다.',
+  ],
+  low: [
+    '"…고맙다." 잊혀진 자의 마지막 말이 안개에 풀어진다. 그것이 천천히 무너진다.',
+    '대화는 칼보다 느리다. 그러나 끝에서 더 멀리 닿는다.',
+    '너는 그것의 이름을 알 것 같았다. 그러나 묻지 않았다. 그것이 옳은 자비였다.',
+  ],
+};
+
+const FLEE: NarrationVariants = {
+  high: [
+    '너는 등을 돌린다. 잊혀진 자는 너를 따라오지 않는다. 다만, 너의 그림자만이 거리에 길게 남는다.',
+    '거리의 끝이 다시 멀어진다. 너는 다음 거리의 사람이 된다.',
+    '안개가 너의 어깨를 잡는다. 그러나 너는 멈추지 않는다.',
+  ],
+  mid: [
+    '너는 한 박자 늦게 돌아본다. 잊혀진 자가 손을 들어 너를 부르려다 만다.',
+    '도망은 쉽지 않다. 너의 발이 너의 어린 시절의 무게를 끌고 간다.',
+    '거리는 너를 보내준다. 그러나 너의 안의 잔향은 따라온다.',
+  ],
+  low: [
+    '너는 도망친다. 잊혀진 자는 무너진다. 그것이 너의 도망에 어떤 의미가 있는지는, 다음 거리에서 알게 될 것이다.',
+    '도망이 끝이 아닐 때가 있다. 너는 그것을 이제 안다.',
+    '거리의 끝에서 너는 멈춘다. 다음 잔향이 너를 기다린다.',
+  ],
+};
+
+const VARIANTS: Record<CombatAction, NarrationVariants> = {
+  attack: ATTACK,
+  dialogue: DIALOGUE,
+  flee: FLEE,
+};
+
+export function pickNarration(action: CombatAction, hpRatio: number, seed: number): string {
+  const v = VARIANTS[action];
+  const tier = hpRatio > 0.66 ? v.high : hpRatio > 0.33 ? v.mid : v.low;
+  return tier[seed % tier.length];
+}

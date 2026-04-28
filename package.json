@@ -1,0 +1,13 @@
+{
+  "name": "resonance",
+  "version": "0.0.1",
+  "private": true,
+  "description": "잔향(Resonance: Echoes of a Forgotten Self) - LLM-driven GPS text MMORPG",
+  "scripts": {
+    "dev": "pnpm --filter ./client dev",
+    "build": "pnpm --filter ./client build",
+    "test": "pnpm --filter ./client test",
+    "typecheck": "pnpm --filter ./client typecheck"
+  },
+  "packageManager": "pnpm@10.33.0"
+}
