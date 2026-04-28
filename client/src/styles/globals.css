@@ -1,0 +1,50 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body, #root {
+    height: 100%;
+    background: var(--bg-primary);
+    color: var(--fg-primary);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
+  }
+
+  body {
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  input, textarea {
+    font-family: inherit;
+    color: var(--fg-primary);
+  }
+
+  /* Disable text selection on game UI for native feel */
+  .game-ui {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+@layer components {
+  .vignette {
+    background:
+      radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%),
+      var(--bg-primary);
+  }
+
+  .display-text {
+    font-family: var(--font-display);
+    letter-spacing: 0.02em;
+  }
+}

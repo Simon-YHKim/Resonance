@@ -1,0 +1,21 @@
+name = "resonance-worker"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Phase 1에서 추가:
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "resonance-d1"
+# database_id = "<set by `wrangler d1 create resonance-d1`>"
+#
+# [[kv_namespaces]]
+# binding = "KV_NICKNAMES"
+# id = "<set by `wrangler kv:namespace create RESONANCE_NICKNAMES`>"
+#
+# [vars]
+# # AI_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/anthropic"
+#
+# [[durable_objects.bindings]]
+# # name = "COMBAT_ROOM"
+# # class_name = "CombatRoom"
