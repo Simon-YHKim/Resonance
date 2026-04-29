@@ -6,7 +6,7 @@ import type { CombatAction } from '@/types/game';
 export interface EnemyArchetype {
   name: string;
   description: string;
-  /** 첫 조우 묘사 — the Voice 화법 */
+  /** 첫 조우 묘사 — 목소리 화법 */
   encounter: string;
   hp: number;
 }
@@ -16,7 +16,7 @@ export const FORGETTER_OF_CHILDHOOD: EnemyArchetype = {
   description:
     '한쪽 무릎이 꺾인 채 천천히 다가온다. 얼굴은 안개에 가려 보이지 않는다. 손에 든 것은… 작은 가방이었던 것 같다.',
   encounter:
-    '거리의 끝에서 익숙한 그림자가 일어선다. the Voice가 속삭인다 — "저 자는 너의 어떤 부분을 잊은 자다."',
+    '거리의 끝에서 익숙한 그림자가 일어선다. 목소리가 속삭인다 — "저 자는 너의 어떤 부분을 잊은 자다."',
   hp: 60,
 };
 

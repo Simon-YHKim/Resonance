@@ -9,7 +9,7 @@ export interface ResonanceTierMeta {
   tier: ResonanceTier;
   /** 이 tier 진입 누적 임계값 (이상) */
   threshold: number;
-  /** the Voice가 부르는 호칭 */
+  /** 목소리가 부르는 호칭 */
   label: string;
   /** 캐릭터 시트에 표시할 한 줄 (≥ echo부터) */
   sheetMessage?: string;

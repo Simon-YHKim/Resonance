@@ -31,7 +31,7 @@ export interface CharacterSheet {
   nickname: string;
   /** LLM 분류 */
   category: NicknameCategory;
-  /** 짧은 캐릭터 컨셉 (the Voice 시점) */
+  /** 짧은 캐릭터 컨셉 (목소리 시점) */
   characterConcept: string;
   /** 외형 묘사 1~2문장 */
   appearance: string;
@@ -41,7 +41,7 @@ export interface CharacterSheet {
   linkedKeywords: Keyword[];
   /** 카테고리 보너스 */
   categoryBonuses: CategoryBonuses;
-  /** the Voice 첫 발화 — 캐릭터 생성 화면에서 스트리밍 */
+  /** 목소리 첫 발화 — 캐릭터 생성 화면에서 스트리밍 */
   voiceFirstLine: string;
   /** 생성 타임스탬프 */
   createdAt: number;
@@ -69,7 +69,7 @@ export type CombatOutcome = 'victory' | 'defeat' | 'fled' | 'stalemate';
 
 /** 1턴 진행 결과 */
 export interface CombatTurnResult {
-  /** the Voice 또는 시스템의 내레이션 (스트리밍) */
+  /** 목소리 또는 시스템의 내레이션 (스트리밍) */
   narration: string;
   /** 플레이어/적 데미지 — 부호 있는 정수 */
   playerHpDelta: number;
