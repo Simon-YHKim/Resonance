@@ -1,11 +1,14 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { FORGETTER_OF_CHILDHOOD } from '@/services/llm/mockData/combatNarrations';
+import { getTier } from '@/services/resonanceTiers';
 
 export function CharacterSheetScreen() {
   const character = useGame((s) => s.character);
+  const totalResonance = useGame((s) => s.totalResonance);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
+  const tier = getTier(totalResonance);
 
   if (!character) {
     return (
@@ -57,6 +60,17 @@ export function CharacterSheetScreen() {
             ))}
           </div>
         </Section>
+
+        {tier.sheetMessage && (
+          <Section label={`잔향의 인장 · ${tier.label}`}>
+            <p className="text-resonance/80 leading-relaxed display-text text-sm italic">
+              {tier.sheetMessage}
+            </p>
+            <p className="text-fg-dim text-xs mt-2 tabular-nums">
+              누적 잔잔 {totalResonance}
+            </p>
+          </Section>
+        )}
       </div>
 
       <div className="max-w-sm w-full mx-auto space-y-3">
