@@ -1,6 +1,7 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { FORGETTER_OF_CHILDHOOD } from '@/services/llm/mockData/combatNarrations';
+import { getTier } from '@/services/resonanceTiers';
 import { useEffect } from 'react';
 
 const COPY = {
@@ -32,6 +33,7 @@ export function ResultScreen() {
   if (!lastOutcome) return null;
 
   const c = COPY[lastOutcome];
+  const tier = getTier(totalResonance);
 
   const handleAgain = () => {
     startCombat({
@@ -55,10 +57,20 @@ export function ResultScreen() {
         <h2 className="display-text text-2xl text-fg-primary mb-6">{c.title}</h2>
         <p className="text-fg-muted leading-relaxed display-text">{c.body}</p>
 
-        <div className="mt-12 border-t border-bg-elevated pt-6">
+        {tier.resultFooter && (
+          <p className="text-resonance/80 leading-relaxed display-text mt-4 text-sm italic animate-fade-in">
+            {tier.resultFooter}
+          </p>
+        )}
+
+        <div className="mt-12 border-t border-bg-elevated pt-6 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-fg-muted">누적 잔잔</span>
             <span className="text-resonance display-text tabular-nums">{totalResonance}</span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-fg-dim">잔향이 부르는 호칭</span>
+            <span className="text-fg-muted display-text">{tier.label}</span>
           </div>
         </div>
       </div>
