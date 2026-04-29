@@ -6,18 +6,18 @@ export default {
     extend: {
       colors: {
         bg: {
-          primary: 'var(--bg-primary)',
-          secondary: 'var(--bg-secondary)',
-          elevated: 'var(--bg-elevated)',
+          primary: 'rgb(var(--bg-primary) / <alpha-value>)',
+          secondary: 'rgb(var(--bg-secondary) / <alpha-value>)',
+          elevated: 'rgb(var(--bg-elevated) / <alpha-value>)',
         },
         fg: {
-          primary: 'var(--fg-primary)',
-          muted: 'var(--fg-muted)',
-          dim: 'var(--fg-dim)',
+          primary: 'rgb(var(--fg-primary) / <alpha-value>)',
+          muted: 'rgb(var(--fg-muted) / <alpha-value>)',
+          dim: 'rgb(var(--fg-dim) / <alpha-value>)',
         },
-        resonance: 'var(--accent-resonance)',
-        origin: 'var(--accent-origin)',
-        danger: 'var(--danger)',
+        resonance: 'rgb(var(--accent-resonance) / <alpha-value>)',
+        origin: 'rgb(var(--accent-origin) / <alpha-value>)',
+        danger: 'rgb(var(--danger) / <alpha-value>)',
       },
       fontFamily: {
         display: 'var(--font-display)',
