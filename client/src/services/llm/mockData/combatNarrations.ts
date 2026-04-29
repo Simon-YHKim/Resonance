@@ -30,18 +30,30 @@ export const FORGETTER_OF_ADOLESCENCE: EnemyArchetype = {
   hp: 75,
 };
 
+/** 성인기의 잊혀진 자 — 잔잔 resonant tier(150+) 이상에서 등장. 가장 무거운 무게. */
+export const FORGETTER_OF_ADULTHOOD: EnemyArchetype = {
+  name: '잊혀진 자 — 어른의 가면',
+  description:
+    '잘 다려진 셔츠. 그러나 옷깃 안쪽에 작은 얼룩이 굳어 있다. 시선은 어디에도 정확히 맺히지 않는다.',
+  encounter:
+    '거리의 끝에서 너의 한 시기가 손을 내밀어 인사한다. 목소리가 속삭인다 — "저 자는 너의 가면을 너보다 먼저 익힌 자다."',
+  hp: 95,
+};
+
 /** 잊혀진 자 선택 — 잔잔 누적 tier에 따라.
- *  novice: 어린 시절의 잔해 (Phase 0 기본)
- *  echo+: 청소년의 침묵 (잔잔 50+에서 등장)
- *  Phase 2+: 20대·30대·5~7세 추가 (v2.3 §28.2 보스 5체) */
+ *  novice  ( 0~ 49): 어린 시절의 잔해 (HP 60)
+ *  echo    (50~149): 청소년의 침묵 (HP 75)
+ *  resonant(150~399) / origin(400+): 어른의 가면 (HP 95)
+ *  Phase 2+: 5~7세 어린 자신 (최종보스, 3페이즈) 추가 — v2.3 §28.2 5체 완성 */
 export function pickForgetter(tier: 'novice' | 'echo' | 'resonant' | 'origin'): EnemyArchetype {
   switch (tier) {
     case 'novice':
       return FORGETTER_OF_CHILDHOOD;
     case 'echo':
+      return FORGETTER_OF_ADOLESCENCE;
     case 'resonant':
     case 'origin':
-      return FORGETTER_OF_ADOLESCENCE;
+      return FORGETTER_OF_ADULTHOOD;
   }
 }
 
