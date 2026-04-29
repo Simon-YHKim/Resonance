@@ -1,8 +1,9 @@
 /* 잔향 도메인 타입
  * 기획서 v2.4 §27 닉네임 시스템 + v2.3 종합 기여도 일부 */
 
-/** 닉네임 위험 카테고리 — Phase 0는 A·D·H 3종만 (v2.4 §27.10) */
-export type NicknameCategory = 'A' | 'D' | 'H';
+/** 닉네임 위험 카테고리 — Phase 0는 A·B·D·H 4종 (v2.4 §27.10 + B 추가)
+ *  Phase 2에서 C·E 추가, Phase 3에서 F·G 추가 */
+export type NicknameCategory = 'A' | 'B' | 'D' | 'H';
 
 /** 4대 키워드 (v1.0 인게임 워딩 사전) */
 export type Keyword = '희생' | '꿈과현실' | '어린시절' | '추억';
@@ -18,6 +19,8 @@ export interface CategoryBonuses {
   shadowFormCrit?: number;
   /** 잊혀진 자 류 추가 데미지 (D) */
   forgetterDamageBonus?: number;
+  /** 동명이인 조우 시 잔잔 가산 (B) — Phase 1에서 즉사기, Phase 0는 표시만 */
+  resonanceLink?: number;
   /** 일반 (H) */
   none?: true;
 }
