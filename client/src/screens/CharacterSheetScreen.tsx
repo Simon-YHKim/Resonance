@@ -4,9 +4,25 @@ import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 
+const CATEGORY_LABEL: Record<'A' | 'B' | 'D' | 'H', string> = {
+  A: '가족 호칭',
+  B: '보편 한국 이름',
+  D: '잿빛 단어',
+  H: '일반',
+};
+
+function formatCreatedAt(ts: number): string {
+  const d = new Date(ts);
+  const yy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yy}년 ${mm}월 ${dd}일`;
+}
+
 export function CharacterSheetScreen() {
   const character = useGame((s) => s.character);
   const totalResonance = useGame((s) => s.totalResonance);
+  const combatCount = useGame((s) => s.combatCount);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const tier = getTier(totalResonance);
@@ -74,6 +90,14 @@ export function CharacterSheetScreen() {
             </p>
           </Section>
         )}
+
+        <Section label="잔향의 기록">
+          <dl className="space-y-1.5 text-xs">
+            <Row k="이름의 분류" v={`${character.category} · ${CATEGORY_LABEL[character.category]}`} />
+            <Row k="잊혀진 자와 만남" v={`${combatCount}회`} />
+            <Row k="잔향에 처음 발 들인 날" v={formatCreatedAt(character.createdAt)} />
+          </dl>
+        </Section>
       </div>
 
       <div className="max-w-sm w-full mx-auto space-y-3">
@@ -91,6 +115,15 @@ function Section({ label, children }: { label: string; children: React.ReactNode
     <div className="mb-6 animate-fade-in">
       <div className="text-fg-dim text-[0.65rem] tracking-[0.2em] uppercase mb-2">{label}</div>
       {children}
+    </div>
+  );
+}
+
+function Row({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex justify-between">
+      <dt className="text-fg-dim">{k}</dt>
+      <dd className="text-fg-muted display-text">{v}</dd>
     </div>
   );
 }

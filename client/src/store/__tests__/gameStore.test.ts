@@ -11,6 +11,7 @@ const initialState = {
   lastOutcome: null,
   lastCombatGain: null,
   resonanceBeforeLastCombat: null,
+  combatCount: 0,
 };
 
 describe('gameStore', () => {
@@ -129,6 +130,22 @@ describe('gameStore', () => {
     useGame.getState().startCombat(combat);
     useGame.getState().endCombat('victory', 38);
     expect(useGame.getState().lastCombatGain).toBe(38);
+  });
+
+  it('endCombat increments combatCount', () => {
+    const combat: CombatState = {
+      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      enemy: { name: 'X', description: 'Y', encounter: 'Z', hp: 60, maxHp: 60 },
+      turn: 0,
+      resonance: 0,
+    };
+    expect(useGame.getState().combatCount).toBe(0);
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('victory', 10);
+    expect(useGame.getState().combatCount).toBe(1);
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('defeat', 5);
+    expect(useGame.getState().combatCount).toBe(2);
   });
 
   it('reset clears character/combat/outcome but not implementation', () => {
