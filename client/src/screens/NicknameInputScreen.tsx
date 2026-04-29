@@ -5,6 +5,14 @@ import { useGame } from '@/store/gameStore';
 
 const MAX_LEN = 12;
 
+/** 입력 안내 — 검증 실패 시 표시. 빈 입력은 안내 X (위협 톤 회피).
+ *  이모지·숫자 단독은 LLM 단에서 처리 (Phase 1+ system prompt). */
+function inputHint(raw: string, trimmed: string): string | null {
+  if (raw.length === 0) return null;
+  if (trimmed.length === 0) return '공백만으로는 부를 수 없다.';
+  return null;
+}
+
 export function NicknameInputScreen() {
   const [value, setValue] = useState('');
   const goTo = useGame((s) => s.goTo);
@@ -12,6 +20,7 @@ export function NicknameInputScreen() {
 
   const trimmed = value.trim();
   const valid = trimmed.length >= 1 && trimmed.length <= MAX_LEN;
+  const hint = inputHint(value, trimmed);
 
   const handleConfirm = () => {
     if (!valid) return;
@@ -42,8 +51,13 @@ export function NicknameInputScreen() {
                        outline-none display-text text-2xl text-center py-3
                        text-fg-primary placeholder:text-fg-dim transition-colors"
           />
-          <div className="text-right text-fg-dim text-xs mt-2 tabular-nums">
-            {trimmed.length} / {MAX_LEN}
+          <div className="flex justify-between items-baseline mt-2">
+            <span className="text-danger/80 text-xs animate-fade-in">
+              {hint ?? ' '}
+            </span>
+            <span className="text-fg-dim text-xs tabular-nums">
+              {trimmed.length} / {MAX_LEN}
+            </span>
           </div>
         </div>
 
