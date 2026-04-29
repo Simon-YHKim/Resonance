@@ -16,6 +16,12 @@ describe('pickLocation', () => {
     expect(picks.size).toBeGreaterThanOrEqual(4);
   });
 
+  it('pool size is 16 — full sweep covers all locations', () => {
+    const picks = new Set<string>();
+    for (let i = 0; i < 32; i++) picks.add(pickLocation(i));
+    expect(picks.size).toBe(16);
+  });
+
   it('handles negative seeds without crashing (totalResonance never negative anyway)', () => {
     expect(() => pickLocation(-1)).not.toThrow();
     expect(pickLocation(-1).length).toBeGreaterThan(0);
