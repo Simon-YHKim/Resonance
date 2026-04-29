@@ -4,7 +4,7 @@
  *   Phase 1 이후 @capacitor/haptics 추가하며 이 모듈에 통합.
  * 안전: 미지원 디바이스는 silent no-op (예외 안 던짐). */
 
-type Strength = 'tap' | 'soft' | 'firm';
+type Strength = 'tap' | 'soft' | 'firm' | 'promotion';
 
 const PATTERNS: Record<Strength, number | number[]> = {
   /** 버튼 탭 — 가장 짧은 단발 */
@@ -13,6 +13,8 @@ const PATTERNS: Record<Strength, number | number[]> = {
   soft: 20,
   /** 결말·중요 액션 — 두 번 진동 */
   firm: [25, 35, 25],
+  /** tier 승급 — 길고 깊은 패턴 (잔향이 호명하는 순간) */
+  promotion: [40, 60, 40, 60, 80],
 };
 
 let unsupported = false;
