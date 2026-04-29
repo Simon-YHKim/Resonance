@@ -6,6 +6,11 @@ import { mockLLM } from '@/services/llm/MockLLMService';
 import { useGame } from '@/store/gameStore';
 import type { CombatAction, CombatTurnResult } from '@/types/game';
 import { FORGETTER_OF_CHILDHOOD } from '@/services/llm/mockData/combatNarrations';
+import {
+  TURN_LIMIT,
+  evaluateOutcome,
+  resonanceBonusFor,
+} from '@/services/combatOutcome';
 
 type Status = 'encounter' | 'idle' | 'narrating' | 'resolving';
 
@@ -15,7 +20,6 @@ const ACTIONS: { key: CombatAction; label: string; cost: number; hint: string }[
   { key: 'flee', label: '도망', cost: 25, hint: '거리를 둔다' },
 ];
 
-const TURN_LIMIT = 5;
 const ENCOUNTER_MS_PER_CHAR = 28;
 
 export function CombatScreen() {
@@ -107,23 +111,15 @@ export function CombatScreen() {
     // 결말 판정 — UX를 위해 0.6초 정지 후 전환
     await new Promise((r) => setTimeout(r, 600));
 
-    if (action === 'flee') {
-      endCombat('fled', newResonance);
-      goTo('result');
-      return;
-    }
-    if (newEnemyHp <= 0) {
-      endCombat('victory', newResonance + 10);
-      goTo('result');
-      return;
-    }
-    if (newPlayerHp <= 0) {
-      endCombat('defeat', newResonance);
-      goTo('result');
-      return;
-    }
-    if (nextTurn >= TURN_LIMIT) {
-      endCombat('defeat', newResonance);
+    const outcome = evaluateOutcome({
+      nextTurn,
+      playerHp: newPlayerHp,
+      enemyHp: newEnemyHp,
+      action,
+    });
+
+    if (outcome) {
+      endCombat(outcome, newResonance + resonanceBonusFor(outcome));
       goTo('result');
       return;
     }
