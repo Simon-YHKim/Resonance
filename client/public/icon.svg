@@ -1,15 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <radialGradient id="g" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#B89DD0" stop-opacity="0.9"/>
-      <stop offset="60%" stop-color="#1A1822"/>
+      <stop offset="0%" stop-color="#B89DD0" stop-opacity="0.95"/>
+      <stop offset="50%" stop-color="#1A1822"/>
       <stop offset="100%" stop-color="#0F0E14"/>
     </radialGradient>
   </defs>
+  <!-- full-bleed background — protects against maskable safe-zone crop -->
   <rect width="512" height="512" fill="#0F0E14"/>
-  <circle cx="256" cy="256" r="240" fill="url(#g)"/>
-  <circle cx="256" cy="256" r="120" fill="none" stroke="#B89DD0" stroke-width="1" opacity="0.4"/>
-  <circle cx="256" cy="256" r="180" fill="none" stroke="#B89DD0" stroke-width="1" opacity="0.25"/>
-  <circle cx="256" cy="256" r="60" fill="none" stroke="#D4A574" stroke-width="2" opacity="0.7"/>
-  <text x="256" y="280" font-family="serif" font-size="120" font-weight="700" fill="#E8E3D5" text-anchor="middle">殘</text>
+  <circle cx="256" cy="256" r="280" fill="url(#g)"/>
+  <!-- decorative concentric rings (inside 80% maskable safe area) -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="#B89DD0" stroke-width="1" opacity="0.30"/>
+  <circle cx="256" cy="256" r="100" fill="none" stroke="#B89DD0" stroke-width="1" opacity="0.45"/>
+  <circle cx="256" cy="256" r="55" fill="none" stroke="#D4A574" stroke-width="2" opacity="0.65"/>
+  <!-- 殘 character sized to fit within ~70% of viewBox (maskable-safe) -->
+  <text x="256" y="280" font-family="serif" font-size="100" font-weight="700"
+        fill="#E8E3D5" text-anchor="middle" dominant-baseline="middle">殘</text>
 </svg>

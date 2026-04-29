@@ -1,7 +1,8 @@
 {
+  "id": "/Resonance/",
   "name": "잔향 — Resonance",
   "short_name": "잔향",
-  "description": "당신의 이름은, 잔향이 된다.",
+  "description": "당신의 이름은, 잔향이 된다. — LLM 기반 한국향 텍스트 RPG.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
@@ -9,12 +10,19 @@
   "background_color": "#0F0E14",
   "theme_color": "#0F0E14",
   "lang": "ko",
+  "categories": ["games", "entertainment"],
   "icons": [
     {
       "src": "./icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }
