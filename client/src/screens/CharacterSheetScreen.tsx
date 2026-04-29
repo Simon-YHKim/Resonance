@@ -1,6 +1,7 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
+import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 
 export function CharacterSheetScreen() {
@@ -25,7 +26,7 @@ export function CharacterSheetScreen() {
       enemy: {
         name: archetype.name,
         description: archetype.description,
-        encounter: archetype.encounter,
+        encounter: withLocation(archetype.encounter, totalResonance),
         hp: archetype.hp,
         maxHp: archetype.hp,
       },

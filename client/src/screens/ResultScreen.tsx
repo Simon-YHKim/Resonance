@@ -1,6 +1,7 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
+import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
 import { useEffect } from 'react';
@@ -49,7 +50,7 @@ export function ResultScreen() {
       enemy: {
         name: archetype.name,
         description: archetype.description,
-        encounter: archetype.encounter,
+        encounter: withLocation(archetype.encounter, totalResonance),
         hp: archetype.hp,
         maxHp: archetype.hp,
       },
