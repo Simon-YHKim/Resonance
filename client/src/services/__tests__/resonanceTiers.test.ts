@@ -37,4 +37,18 @@ describe('getTier', () => {
     expect(getTier(150).sheetMessage).toBeTruthy();
     expect(getTier(400).resultFooter).toBeTruthy();
   });
+
+  it('action buffs scale up with tier', () => {
+    expect(getTier(0).actionBuffs.dialogueResonanceBonus).toBe(0);
+    expect(getTier(0).actionBuffs.attackDamageMultiplier).toBe(1.0);
+
+    expect(getTier(50).actionBuffs.dialogueResonanceBonus).toBeGreaterThan(0);
+    expect(getTier(150).actionBuffs.dialogueResonanceBonus).toBeGreaterThan(
+      getTier(50).actionBuffs.dialogueResonanceBonus,
+    );
+    expect(getTier(150).actionBuffs.attackDamageMultiplier).toBeGreaterThan(1.0);
+    expect(getTier(400).actionBuffs.attackDamageMultiplier).toBeGreaterThan(
+      getTier(150).actionBuffs.attackDamageMultiplier,
+    );
+  });
 });

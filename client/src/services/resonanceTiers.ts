@@ -5,6 +5,14 @@
 
 export type ResonanceTier = 'novice' | 'echo' | 'resonant' | 'origin';
 
+/** Tier별 전투 액션 보정 — 같은 액션이라도 tier가 높으면 더 깊이 있는 결과. */
+export interface TierActionBuffs {
+  /** dialogue 액션 후 추가로 누적할 잔잔 (기본 0) */
+  dialogueResonanceBonus: number;
+  /** attack 액션의 적 HP 데미지 배율 (기본 1.0) */
+  attackDamageMultiplier: number;
+}
+
 export interface ResonanceTierMeta {
   tier: ResonanceTier;
   /** 이 tier 진입 누적 임계값 (이상) */
@@ -15,6 +23,8 @@ export interface ResonanceTierMeta {
   sheetMessage?: string;
   /** 결말 화면에 footer로 추가할 한 줄 (≥ echo부터) */
   resultFooter?: string;
+  /** 전투 액션 보정 — 모든 tier에 정의 (novice는 기본값) */
+  actionBuffs: TierActionBuffs;
 }
 
 export const TIERS: ReadonlyArray<ResonanceTierMeta> = [
@@ -22,27 +32,33 @@ export const TIERS: ReadonlyArray<ResonanceTierMeta> = [
     tier: 'novice',
     threshold: 0,
     label: '처음 온 자',
+    actionBuffs: { dialogueResonanceBonus: 0, attackDamageMultiplier: 1.0 },
   },
   {
     tier: 'echo',
     threshold: 50,
     label: '잔향이 머무는 자',
-    sheetMessage: '거리가 너를 알아본다.',
+    sheetMessage: '거리가 너를 알아본다. 너의 대화에 잔향이 더 깊이 머문다.',
     resultFooter: '잔향이 너의 발자국을 따라온다.',
+    actionBuffs: { dialogueResonanceBonus: 3, attackDamageMultiplier: 1.0 },
   },
   {
     tier: 'resonant',
     threshold: 150,
     label: '잔향과 함께 걷는 자',
-    sheetMessage: '잔향은 너에게 자리를 내어준다. 너는 더 이상 객이 아니다.',
+    sheetMessage:
+      '잔향은 너에게 자리를 내어준다. 너의 대화는 더 깊고, 너의 손은 더 멀리 닿는다.',
     resultFooter: '거리는 너의 호흡과 같은 박자로 숨을 쉰다.',
+    actionBuffs: { dialogueResonanceBonus: 6, attackDamageMultiplier: 1.15 },
   },
   {
     tier: 'origin',
     threshold: 400,
     label: '원의 자리에 가까워진 자',
-    sheetMessage: '잔향은 더 이상 너를 시험하지 않는다. 원의 자리가 보인다.',
+    sheetMessage:
+      '잔향은 더 이상 너를 시험하지 않는다. 너의 한 마디가 거리를 흔든다.',
     resultFooter: '잊혀진 자들이 너를 알아보고, 한 박자 늦게 길을 비킨다.',
+    actionBuffs: { dialogueResonanceBonus: 10, attackDamageMultiplier: 1.3 },
   },
 ];
 
