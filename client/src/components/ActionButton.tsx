@@ -1,7 +1,10 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { ButtonHTMLAttributes, ReactNode, MouseEventHandler } from 'react';
+import { haptic as triggerHaptic } from '@/utils/haptic';
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'ghost' | 'subtle';
+  /** 터치 시 햅틱 강도 — primary 기본 'soft', 그 외 'tap'. 'none'으로 비활성. */
+  feedback?: 'tap' | 'soft' | 'firm' | 'none';
   children: ReactNode;
 }
 
@@ -16,18 +19,29 @@ const VARIANTS: Record<NonNullable<Props['variant']>, string> = {
 
 export function ActionButton({
   variant = 'primary',
+  feedback,
   className = '',
   children,
+  onClick,
   ...rest
 }: Props) {
+  const handleClick: MouseEventHandler<HTMLButtonElement> = (e) => {
+    if (rest.disabled) return;
+    const strength = feedback ?? (variant === 'primary' ? 'soft' : 'tap');
+    if (strength !== 'none') triggerHaptic(strength);
+    onClick?.(e);
+  };
+
   return (
     <button
+      onClick={handleClick}
       className={`
         w-full px-6 py-4
         display-text text-base tracking-wider
         rounded-sm
-        transition-colors duration-200
-        disabled:cursor-not-allowed
+        transition-all duration-150
+        active:scale-[0.98]
+        disabled:cursor-not-allowed disabled:active:scale-100
         ${VARIANTS[variant]}
         ${className}
       `}
