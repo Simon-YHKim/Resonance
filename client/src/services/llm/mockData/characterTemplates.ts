@@ -49,6 +49,30 @@ const TEMPLATES_A: ReadonlyArray<Template> = [
     categoryBonuses: { childhoodBossCrit: 0.10 },
     voiceFirstLine: '문은 항상 너를 위해 조금만 열려 있었다.',
   },
+  {
+    characterConcept: '여름밤 매미 소리에 깨어난 자',
+    appearance: '얇은 면 셔츠. 손목에 모기 물린 자국 두 개가 또렷하다.',
+    startingClass: '한밤의 청자',
+    linkedKeywords: ['어린시절'],
+    categoryBonuses: { childhoodBossCrit: 0.15 },
+    voiceFirstLine: '그 사람이 부르던 자장가의 박자가, 지금도 너의 호흡과 같다.',
+  },
+  {
+    characterConcept: '시장통 한쪽에 묶여 있던 새벽의 손',
+    appearance: '소매가 살짝 길고, 손가락 끝에 쌀 한 톨 묻어 있다.',
+    startingClass: '시장의 그림자',
+    linkedKeywords: ['추억', '희생'],
+    categoryBonuses: { autoReviveOnce: true },
+    voiceFirstLine: '그 사람의 손이 너의 손을 끌고 갔던 골목, 너는 그 길을 외운 것이 아니다.',
+  },
+  {
+    characterConcept: '졸업식 사진의 빈 자리에 서 있던 자',
+    appearance: '학사모가 약간 비뚤어져 있다. 옆에 누군가가 있었던 듯한 어깨선.',
+    startingClass: '비어 있던 자리의 사람',
+    linkedKeywords: ['어린시절', '추억'],
+    categoryBonuses: { childhoodBossCrit: 0.20 },
+    voiceFirstLine: '그 자리는 비어 있는 것이 아니었다. 너의 눈에만 보이지 않았을 뿐이다.',
+  },
 ];
 
 /** D — 위험 단어. "그림자/어둠/잊혀진" 등 추상 어휘만. 자해 직접 묘사 절대 금지. */
@@ -92,6 +116,30 @@ const TEMPLATES_D: ReadonlyArray<Template> = [
     linkedKeywords: ['꿈과현실'],
     categoryBonuses: { forgetterDamageBonus: 0.15 },
     voiceFirstLine: '닫힌 것은 사라진 것이 아니다. 너는 그 사실을 알고 있다.',
+  },
+  {
+    characterConcept: '전화선이 끊긴 뒤의 침묵을 듣는 자',
+    appearance: '귀 한쪽이 살짝 붉다. 손에 쥔 무엇인가가 보이지 않는다.',
+    startingClass: '침묵의 청자',
+    linkedKeywords: ['희생'],
+    categoryBonuses: { shadowFormCrit: 0.20 },
+    voiceFirstLine: '소리가 끊긴 자리는, 그 소리의 무게를 정확히 기억한다.',
+  },
+  {
+    characterConcept: '새벽 정류장의 마지막 차를 놓친 자',
+    appearance: '발 끝이 살짝 안쪽을 향한다. 외투 깃 위로 작은 서리가 앉아 있다.',
+    startingClass: '놓친 차의 승객',
+    linkedKeywords: ['꿈과현실', '희생'],
+    categoryBonuses: { forgetterDamageBonus: 0.20 },
+    voiceFirstLine: '놓친 것은 끝이 아니다. 다음 차는 너만을 위해 기다리고 있다.',
+  },
+  {
+    characterConcept: '주인 없는 우산을 매일 다시 찾던 자',
+    appearance: '왼쪽 어깨만 비를 맞은 자국이 옅게 남아 있다.',
+    startingClass: '잃어버린 우산의 수호자',
+    linkedKeywords: ['추억', '희생'],
+    categoryBonuses: { shadowFormCrit: 0.18 },
+    voiceFirstLine: '우산은 비를 막는 도구가 아니었다. 너는 그 사실을 알고 있다.',
   },
 ];
 
@@ -160,6 +208,30 @@ const TEMPLATES_H: ReadonlyArray<Template> = [
     linkedKeywords: ['어린시절'],
     categoryBonuses: { none: true },
     voiceFirstLine: '첫 발자국은, 누구도 따라올 수 없는 자리이다.',
+  },
+  {
+    characterConcept: '편의점 새벽 근무를 마치고 돌아오는 자',
+    appearance: '에코백이 어깨에 비스듬히 걸려 있다. 손목에 영수증 한 장이 말려 있다.',
+    startingClass: '새벽의 정산자',
+    linkedKeywords: ['꿈과현실'],
+    categoryBonuses: { none: true },
+    voiceFirstLine: '하루의 끝과 시작 사이를, 너는 가장 잘 안다.',
+  },
+  {
+    characterConcept: '옥상 텃밭의 작은 화분을 매일 살피던 자',
+    appearance: '손톱 밑에 옅은 흙 자국. 바람을 한 박자 먼저 느끼는 어깨.',
+    startingClass: '옥상의 정원사',
+    linkedKeywords: ['추억', '꿈과현실'],
+    categoryBonuses: { none: true },
+    voiceFirstLine: '작은 화분도 자기만의 잔향을 가진다. 너는 그 잔향을 들을 줄 안다.',
+  },
+  {
+    characterConcept: '지하철 마지막 칸의 창가를 좋아하던 자',
+    appearance: '이어폰 한쪽이 헐렁하다. 가방 끈이 살짝 닳아 있다.',
+    startingClass: '마지막 칸의 관찰자',
+    linkedKeywords: ['꿈과현실'],
+    categoryBonuses: { none: true },
+    voiceFirstLine: '가장 뒤의 자리에서만 보이는 풍경이 있다. 너는 그것을 알고 있다.',
   },
 ];
 
