@@ -1,10 +1,12 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
+import { getTier } from '@/services/resonanceTiers';
 
 export function TitleScreen() {
   const goTo = useGame((s) => s.goTo);
   const character = useGame((s) => s.character);
   const totalResonance = useGame((s) => s.totalResonance);
+  const tier = getTier(totalResonance);
 
   return (
     <div className="vignette min-h-full flex flex-col items-center justify-center px-8 py-12 game-ui">
@@ -15,16 +17,35 @@ export function TitleScreen() {
         <p className="text-fg-dim text-sm mt-12 text-center animate-fade-in italic">
           당신의 이름은,<br />잔향이 된다.
         </p>
+
+        {character && (
+          <div className="mt-12 text-center animate-fade-in-slow">
+            <p className="text-fg-dim text-[0.65rem] tracking-[0.3em] uppercase mb-1">
+              마지막 잔향
+            </p>
+            <p className="display-text text-fg-primary text-lg">{character.nickname}</p>
+            <p className="text-resonance/80 display-text text-xs mt-1">— {tier.label}</p>
+          </div>
+        )}
       </div>
 
       <div className="w-full max-w-sm space-y-3 animate-fade-in">
-        <ActionButton onClick={() => goTo('nicknameInput')}>
-          {character ? '이름을 다시 부른다' : '이름을 가진 자'}
-        </ActionButton>
-        {character && (
-          <p className="text-fg-dim text-xs text-center tabular-nums">
-            누적 잔잔 · {totalResonance}
-          </p>
+        {character ? (
+          <>
+            <ActionButton onClick={() => goTo('characterSheet')}>
+              잔향의 자리로
+            </ActionButton>
+            <ActionButton variant="ghost" onClick={() => goTo('nicknameInput')}>
+              이름을 다시 부른다
+            </ActionButton>
+            <p className="text-fg-dim text-xs text-center tabular-nums">
+              누적 잔잔 · {totalResonance}
+            </p>
+          </>
+        ) : (
+          <ActionButton onClick={() => goTo('nicknameInput')}>
+            이름을 가진 자
+          </ActionButton>
         )}
       </div>
     </div>
