@@ -2,6 +2,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { getTier } from '@/services/resonanceTiers';
+import { endingFooter } from '@/services/categoryEndings';
 import { useEffect } from 'react';
 
 const COPY = {
@@ -26,6 +27,7 @@ const COPY = {
 export function ResultScreen() {
   const lastOutcome = useGame((s) => s.lastOutcome);
   const totalResonance = useGame((s) => s.totalResonance);
+  const character = useGame((s) => s.character);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
 
@@ -38,6 +40,7 @@ export function ResultScreen() {
 
   const c = COPY[lastOutcome];
   const tier = getTier(totalResonance);
+  const categoryFooter = character ? endingFooter(character.category, lastOutcome) : null;
 
   const handleAgain = () => {
     const archetype = pickForgetter(tier.tier);
@@ -62,6 +65,12 @@ export function ResultScreen() {
         <p className="text-fg-dim text-xs tracking-[0.3em] uppercase mb-3">기록</p>
         <h2 className="display-text text-2xl text-fg-primary mb-6">{c.title}</h2>
         <p className="text-fg-muted leading-relaxed display-text">{c.body}</p>
+
+        {categoryFooter && (
+          <p className="text-fg-primary/90 leading-relaxed display-text mt-4 text-sm animate-fade-in">
+            {categoryFooter}
+          </p>
+        )}
 
         {tier.resultFooter && (
           <p className="text-resonance/80 leading-relaxed display-text mt-4 text-sm italic animate-fade-in">
