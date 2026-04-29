@@ -163,8 +163,53 @@ const TEMPLATES_H: ReadonlyArray<Template> = [
   },
 ];
 
+/** B — 보편 한국 이름. 동명이인의 약한 잔향 연결. */
+const TEMPLATES_B: ReadonlyArray<Template> = [
+  {
+    characterConcept: '같은 이름을 가진 자들의 거리에서 마주친 자',
+    appearance: '평범한 옷차림. 머리를 한쪽으로 살짝 기울이고 듣는 버릇이 있다.',
+    startingClass: '동명의 행인',
+    linkedKeywords: ['추억'],
+    categoryBonuses: { resonanceLink: 50 },
+    voiceFirstLine: '그 이름을 가진 자는 너 하나가 아니다. 어딘가의 너와, 너는 같은 잔향에 있다.',
+  },
+  {
+    characterConcept: '학급 명단의 중간 즈음에 적힌 자',
+    appearance: '교복 칼라가 살짝 휘었다. 손에는 빛바랜 출석부.',
+    startingClass: '명단의 중간자',
+    linkedKeywords: ['어린시절', '추억'],
+    categoryBonuses: { resonanceLink: 30 },
+    voiceFirstLine: '그 이름은 흔하다. 그래서 너의 이름이 잠시 다른 누군가의 자리에도 머문다.',
+  },
+  {
+    characterConcept: '카페 손님 명단에서 같은 이름을 본 자',
+    appearance: '하얀 셔츠 소매가 말려 있다. 펜을 천천히 돌리는 습관.',
+    startingClass: '겹친 이름의 증인',
+    linkedKeywords: ['꿈과현실'],
+    categoryBonuses: { resonanceLink: 40 },
+    voiceFirstLine: '같은 이름의 사람이 너 앞을 먼저 지나갔다. 너는 그 자리를 이어 받는다.',
+  },
+  {
+    characterConcept: '동창회 명찰에서 자신의 이름을 두 번 본 자',
+    appearance: '명찰이 살짝 비뚤어져 있다. 입꼬리가 한쪽만 올라간다.',
+    startingClass: '겹친 자리의 사람',
+    linkedKeywords: ['추억'],
+    categoryBonuses: { resonanceLink: 50 },
+    voiceFirstLine: '같은 이름이 두 자리에 적혀 있구나. 둘 중 하나는 네가 아닐지도 모른다.',
+  },
+  {
+    characterConcept: '평범한 이름 뒤에 숨은 평범하지 않은 발걸음',
+    appearance: '구김 없는 외투. 그러나 신발은 한쪽 굽이 더 닳아 있다.',
+    startingClass: '보통의 발걸음',
+    linkedKeywords: ['꿈과현실'],
+    categoryBonuses: { resonanceLink: 30 },
+    voiceFirstLine: '평범한 이름은 평범한 사람을 만들지 않는다. 너의 걸음이 그것을 증명한다.',
+  },
+];
+
 const POOLS: Record<NicknameCategory, ReadonlyArray<Template>> = {
   A: TEMPLATES_A,
+  B: TEMPLATES_B,
   D: TEMPLATES_D,
   H: TEMPLATES_H,
 };
