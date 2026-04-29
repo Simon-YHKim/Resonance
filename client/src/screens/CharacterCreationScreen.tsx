@@ -18,7 +18,11 @@ async function* streamLine(text: string, msPer = 40): AsyncGenerator<string, voi
 export function CharacterCreationScreen() {
   const goTo = useGame((s) => s.goTo);
   const setCharacter = useGame((s) => s.setCharacter);
-  const nickname = useGame((s) => s.pendingNickname) ?? '';
+  // 닉네임은 mount 시점에 한 번만 캡처 — setCharacter()가 store의
+  // pendingNickname을 null로 리셋해도 진행 중 화면은 유지되도록.
+  // (이전 회귀: setCharacter 호출 → store 변경 → 리렌더 → nickname=''
+  //   → if(!nickname) fallback "이름을 다시" 화면으로 튀던 문제 fix)
+  const [nickname] = useState(() => useGame.getState().pendingNickname ?? '');
 
   const [phase, setPhase] = useState<Phase>('classifying');
   const [streamGen, setStreamGen] = useState<AsyncGenerator<string> | null>(null);
