@@ -60,8 +60,12 @@ export interface CombatState {
   resonance: number;
 }
 
-/** 전투 결말 */
-export type CombatOutcome = 'victory' | 'defeat' | 'fled';
+/** 전투 결말
+ *  - victory: 적 HP 0
+ *  - defeat: 플레이어 HP 0
+ *  - fled: 플레이어가 도망 액션 선택
+ *  - stalemate: 턴 한도 도달, 양쪽 다 HP 남아있음 — 잔잔만 누적, 다음 거리로 */
+export type CombatOutcome = 'victory' | 'defeat' | 'fled' | 'stalemate';
 
 /** 1턴 진행 결과 */
 export interface CombatTurnResult {

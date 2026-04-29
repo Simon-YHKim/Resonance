@@ -17,6 +17,10 @@ const COPY = {
     title: '너는 거리를 떠났다',
     body: '도망이 끝이 아닐 때가 있다. 너는 그것을 이제 안다.',
   },
+  stalemate: {
+    title: '거리가 너를 보내준다',
+    body: '결판은 나지 않았다. 잊혀진 자도, 너도 안개 속에 다시 잠긴다. 다음 거리가 너를 기다린다.',
+  },
 } as const;
 
 export function ResultScreen() {
