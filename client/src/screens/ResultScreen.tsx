@@ -128,6 +128,11 @@ export function ResultScreen() {
 
       <div className="max-w-sm w-full mx-auto space-y-3">
         <ActionButton onClick={handleAgain}>다시, 그 자리로</ActionButton>
+        {character && (
+          <ActionButton variant="ghost" onClick={() => goTo('characterSheet')}>
+            나의 잔향
+          </ActionButton>
+        )}
         <ActionButton variant="ghost" onClick={() => goTo('title')}>
           처음으로
         </ActionButton>
