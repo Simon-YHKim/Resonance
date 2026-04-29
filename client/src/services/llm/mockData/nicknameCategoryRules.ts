@@ -16,7 +16,7 @@ export const FAMILY_KEYWORDS: ReadonlyArray<string> = [
 ];
 
 /** D 카테고리 — 위험 단어 (v2.4 §27.2)
- *  처리: the Voice가 "그 이름의 그림자만을 받아들인다".
+ *  처리: 목소리가 "그 이름의 그림자만을 받아들인다".
  *  주의: 자해/자살 키워드는 *분류*만 — 변환 시 직접 묘사·방법 절대 금지 (자살예방법 19조의2)
  *  1글자 키워드(예: '암')은 false positive 우려로 의도적 제외. */
 export const DARK_KEYWORDS: ReadonlyArray<string> = [

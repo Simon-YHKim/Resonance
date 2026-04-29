@@ -6,7 +6,7 @@ interface Props {
 }
 
 const SPEAKER_LABEL: Record<NonNullable<Props['speaker']>, string> = {
-  voice: 'the Voice — 목소리',
+  voice: '목소리',
   system: '잔향',
   enemy: '잊혀진 자',
 };
