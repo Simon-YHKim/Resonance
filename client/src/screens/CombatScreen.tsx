@@ -5,7 +5,6 @@ import { VoiceBubble } from '@/components/VoiceBubble';
 import { mockLLM } from '@/services/llm/MockLLMService';
 import { useGame } from '@/store/gameStore';
 import type { CombatAction, CombatTurnResult } from '@/types/game';
-import { FORGETTER_OF_CHILDHOOD } from '@/services/llm/mockData/combatNarrations';
 import {
   TURN_LIMIT,
   evaluateOutcome,
@@ -38,7 +37,7 @@ export function CombatScreen() {
     cancelRef.current = false;
     let i = 0;
     setNarration('');
-    const text = FORGETTER_OF_CHILDHOOD.encounter;
+    const text = combat.enemy.encounter;
     const id = setInterval(() => {
       if (cancelRef.current) {
         clearInterval(id);

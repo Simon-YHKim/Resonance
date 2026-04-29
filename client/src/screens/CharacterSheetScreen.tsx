@@ -1,6 +1,6 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
-import { FORGETTER_OF_CHILDHOOD } from '@/services/llm/mockData/combatNarrations';
+import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { getTier } from '@/services/resonanceTiers';
 
 export function CharacterSheetScreen() {
@@ -19,13 +19,15 @@ export function CharacterSheetScreen() {
   }
 
   const handleEnterCombat = () => {
+    const archetype = pickForgetter(tier.tier);
     startCombat({
       player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
       enemy: {
-        name: FORGETTER_OF_CHILDHOOD.name,
-        description: FORGETTER_OF_CHILDHOOD.description,
-        hp: FORGETTER_OF_CHILDHOOD.hp,
-        maxHp: FORGETTER_OF_CHILDHOOD.hp,
+        name: archetype.name,
+        description: archetype.description,
+        encounter: archetype.encounter,
+        hp: archetype.hp,
+        maxHp: archetype.hp,
       },
       turn: 0,
       resonance: 0,

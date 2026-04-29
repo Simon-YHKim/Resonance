@@ -53,7 +53,14 @@ export type CombatAction = 'attack' | 'dialogue' | 'flee';
 /** 단일 전투 상태 — 잊혀진 자 1체 vs the Named */
 export interface CombatState {
   player: { hp: number; maxHp: number; stamina: number; maxStamina: number };
-  enemy: { name: string; description: string; hp: number; maxHp: number };
+  enemy: {
+    name: string;
+    description: string;
+    /** 첫 조우 묘사 — CombatScreen 진입 시 1회 스트리밍 */
+    encounter: string;
+    hp: number;
+    maxHp: number;
+  };
   /** 진행한 턴 수 */
   turn: number;
   /** 누적 잔잔 (v2.3 BOTW식 잔잔 누적) */
