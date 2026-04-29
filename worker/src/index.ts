@@ -22,12 +22,44 @@ type Env = {
 
 const app = new Hono<{ Bindings: Env }>();
 
+/* CORS — GitHub Pages 배포본이 워커를 부를 수 있도록.
+ * Phase 1 실제 도메인 확정 시 origin allowlist 좁힘. */
+app.use('/api/*', async (c, next) => {
+  c.header('Access-Control-Allow-Origin', '*');
+  c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  c.header('Access-Control-Allow-Headers', 'Content-Type');
+  if (c.req.method === 'OPTIONS') return c.body(null, 204);
+  await next();
+});
+
 app.get('/api/health', (c) =>
   c.json({
     name: 'resonance-worker',
     phase: 0,
     status: 'placeholder',
     note: 'Real LLM endpoints land in Phase 1',
+    /* Phase 0: 클라이언트 단독 동작 — 이 워커는 헬스체크만.
+     * Phase 1 진입 시 endpoints.available 가 채워진다. */
+    endpoints: {
+      available: ['/api/health'],
+      planned: [
+        'POST /api/nickname/classify',
+        'POST /api/character/generate',
+        'POST /api/combat/turn',
+      ],
+    },
+    /* 안전 정책 — 자살예방법 §19조의2 (2년 / 2천만원).
+     * D 카테고리 닉네임은 자해 방법·도구·과정 직접 묘사 절대 금지.
+     * 클라이언트 룰북: client/src/services/llm/mockData/nicknameCategoryRules.ts */
+    safety: {
+      D_category: 'no_self_harm_depiction',
+      hotline_KR: '1393',
+    },
+    /* 클라이언트 산출물 (참고용) */
+    client: {
+      pages_url: 'https://simon-yhkim.github.io/Resonance/',
+    },
+    server_time: new Date().toISOString(),
   }),
 );
 
