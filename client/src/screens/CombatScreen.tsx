@@ -10,6 +10,7 @@ import {
   evaluateOutcome,
   resonanceBonusFor,
 } from '@/services/combatOutcome';
+import { getTier } from '@/services/resonanceTiers';
 import { haptic } from '@/utils/haptic';
 
 type Status = 'encounter' | 'idle' | 'narrating' | 'resolving';
@@ -94,13 +95,27 @@ export function CombatScreen() {
 
     if (!result) return;
 
+    // tier 기반 액션 보정 — 누적 잔잔이 깊을수록 같은 액션이 더 큰 효과.
+    // dialogue: tier별 잔잔 보너스 추가, attack: tier별 데미지 배율.
+    const tier = getTier(useGame.getState().totalResonance);
+    const buffs = tier.actionBuffs;
+    const dialogueBonus =
+      action === 'dialogue' ? buffs.dialogueResonanceBonus : 0;
+    const attackDamageBoost =
+      action === 'attack'
+        ? Math.round(result.enemyHpDelta * (buffs.attackDamageMultiplier - 1))
+        : 0;
+
     const newPlayerHp = Math.max(0, Math.min(player.maxHp, player.hp + result.playerHpDelta));
     const newPlayerStamina = Math.max(
       0,
       Math.min(player.maxStamina, player.stamina + result.playerStaminaDelta),
     );
-    const newEnemyHp = Math.max(0, Math.min(enemy.maxHp, enemy.hp + result.enemyHpDelta));
-    const newResonance = resonance + result.resonanceDelta;
+    const newEnemyHp = Math.max(
+      0,
+      Math.min(enemy.maxHp, enemy.hp + result.enemyHpDelta + attackDamageBoost),
+    );
+    const newResonance = resonance + result.resonanceDelta + dialogueBonus;
     const nextTurn = turn + 1;
 
     updateCombat({
