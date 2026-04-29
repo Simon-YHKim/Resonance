@@ -1,24 +1,26 @@
 /* 잔향 디자인 토큰 — v2.2 K-콘텐츠 모던 톤 (어두운 파스텔 멜랑콜리)
- * v2.4 §28.5 — MVP 3프리셋 중 Phase 0는 "기본 (잔향)" 1개만 구현 */
+ * v2.4 §28.5 — MVP 3프리셋 중 Phase 0는 "기본 (잔향)" 1개만 구현
+ *
+ * 색상은 RGB triplet 형식 — Tailwind opacity modifier (`/90` 등) 정상 동작 위함. */
 
 :root {
   /* Background — 깊은 자정 */
-  --bg-primary: #0F0E14;
-  --bg-secondary: #1A1822;
-  --bg-elevated: #24202E;
+  --bg-primary: 15 14 20;          /* #0F0E14 */
+  --bg-secondary: 26 24 34;        /* #1A1822 */
+  --bg-elevated: 36 32 46;         /* #24202E */
 
   /* Foreground — 바랜 종이 */
-  --fg-primary: #E8E3D5;
-  --fg-muted: #8B8595;
-  --fg-dim: #5A5566;
+  --fg-primary: 232 227 213;       /* #E8E3D5 */
+  --fg-muted: 139 133 149;         /* #8B8595 */
+  --fg-dim: 90 85 102;             /* #5A5566 */
 
   /* Accents */
-  --accent-resonance: #B89DD0;  /* 잔향 — 흐릿한 라벤더 */
-  --accent-origin: #D4A574;     /* 원 — 빛 바랜 황금 */
+  --accent-resonance: 184 157 208; /* #B89DD0 잔향 — 흐릿한 라벤더 */
+  --accent-origin: 212 165 116;    /* #D4A574 원 — 빛 바랜 황금 */
 
   /* Semantic */
-  --danger: #C97373;
-  --success: #8FAE8B;
+  --danger: 201 115 115;           /* #C97373 */
+  --success: 143 174 139;          /* #8FAE8B */
 
   /* Typography */
   --font-display: 'Noto Serif KR', 'Apple SD Gothic Neo', serif;
