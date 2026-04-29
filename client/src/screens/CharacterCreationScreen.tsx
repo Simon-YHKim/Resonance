@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActionButton } from '@/components/ActionButton';
 import { StreamingText } from '@/components/StreamingText';
 import { VoiceBubble } from '@/components/VoiceBubble';
@@ -18,11 +18,7 @@ async function* streamLine(text: string, msPer = 40): AsyncGenerator<string, voi
 export function CharacterCreationScreen() {
   const goTo = useGame((s) => s.goTo);
   const setCharacter = useGame((s) => s.setCharacter);
-
-  const nickname = useMemo(
-    () => sessionStorage.getItem('resonance:pendingNickname') ?? '',
-    [],
-  );
+  const nickname = useGame((s) => s.pendingNickname) ?? '';
 
   const [phase, setPhase] = useState<Phase>('classifying');
   const [streamGen, setStreamGen] = useState<AsyncGenerator<string> | null>(null);
