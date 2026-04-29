@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { getTier } from '@/services/resonanceTiers';
@@ -6,7 +7,23 @@ export function TitleScreen() {
   const goTo = useGame((s) => s.goTo);
   const character = useGame((s) => s.character);
   const totalResonance = useGame((s) => s.totalResonance);
+  const reset = useGame((s) => s.reset);
   const tier = getTier(totalResonance);
+  const [resetArmed, setResetArmed] = useState(false);
+
+  const handleReset = () => {
+    if (!resetArmed) {
+      setResetArmed(true);
+      return;
+    }
+    reset();
+    try {
+      localStorage.removeItem('resonance:game');
+    } catch {
+      // SSR 환경 또는 storage 차단 — 무시
+    }
+    setResetArmed(false);
+  };
 
   return (
     <div className="vignette min-h-full flex flex-col items-center justify-center px-8 py-12 game-ui">
@@ -41,6 +58,21 @@ export function TitleScreen() {
             <p className="text-fg-dim text-xs text-center tabular-nums">
               누적 잔잔 · {totalResonance}
             </p>
+            <button
+              type="button"
+              onClick={handleReset}
+              onBlur={() => setResetArmed(false)}
+              className={
+                'block w-full text-center text-[0.65rem] tracking-[0.2em] uppercase py-2 transition-colors ' +
+                (resetArmed
+                  ? 'text-danger/90'
+                  : 'text-fg-dim/60 hover:text-fg-dim')
+              }
+            >
+              {resetArmed
+                ? '한 번 더 누르면 모든 잔향이 지워진다'
+                : '잔향을 모두 지운다'}
+            </button>
           </>
         ) : (
           <ActionButton onClick={() => goTo('nicknameInput')}>
