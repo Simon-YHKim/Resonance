@@ -24,6 +24,8 @@ interface GameState {
   lastCombatGain: number | null;
   /** 직전 전투 시작 시점의 누적 잔잔 (tier 승급 감지용) */
   resonanceBeforeLastCombat: number | null;
+  /** 누적 전투 횟수 (캐릭터 시트 만남 N회 표시용) */
+  combatCount: number;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -46,6 +48,7 @@ export const useGame = create<GameState>()(
       lastOutcome: null,
       lastCombatGain: null,
       resonanceBeforeLastCombat: null,
+      combatCount: 0,
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -63,6 +66,7 @@ export const useGame = create<GameState>()(
           lastOutcome: outcome,
           totalResonance: s.totalResonance + gain,
           lastCombatGain: gain,
+          combatCount: s.combatCount + 1,
           combat: null,
         })),
       reset: () =>
@@ -74,6 +78,7 @@ export const useGame = create<GameState>()(
           lastOutcome: null,
           lastCombatGain: null,
           resonanceBeforeLastCombat: null,
+          combatCount: 0,
         }),
     }),
     {
@@ -81,6 +86,7 @@ export const useGame = create<GameState>()(
       partialize: (s) => ({
         character: s.character,
         totalResonance: s.totalResonance,
+        combatCount: s.combatCount,
       }),
     },
   ),
