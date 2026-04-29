@@ -36,7 +36,7 @@ export function CharacterSheetScreen() {
   }
 
   const handleEnterCombat = () => {
-    const archetype = pickForgetter(tier.tier);
+    const archetype = pickForgetter(tier.tier, totalResonance);
     startCombat({
       player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
       enemy: {

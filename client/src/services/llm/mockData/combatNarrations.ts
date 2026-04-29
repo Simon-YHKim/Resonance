@@ -30,7 +30,7 @@ export const FORGETTER_OF_ADOLESCENCE: EnemyArchetype = {
   hp: 75,
 };
 
-/** 성인기의 잊혀진 자 — 잔잔 resonant tier(150+) 이상에서 등장. 가장 무거운 무게. */
+/** 성인기의 잊혀진 자 — 잔잔 resonant tier(150~399)에서 등장. 가장 무거운 무게. */
 export const FORGETTER_OF_ADULTHOOD: EnemyArchetype = {
   name: '잊혀진 자 — 어른의 가면',
   description:
@@ -40,20 +40,56 @@ export const FORGETTER_OF_ADULTHOOD: EnemyArchetype = {
   hp: 95,
 };
 
-/** 잊혀진 자 선택 — 잔잔 누적 tier에 따라.
- *  novice  ( 0~ 49): 어린 시절의 잔해 (HP 60)
- *  echo    (50~149): 청소년의 침묵 (HP 75)
- *  resonant(150~399) / origin(400+): 어른의 가면 (HP 95)
- *  Phase 2+: 5~7세 어린 자신 (최종보스, 3페이즈) 추가 — v2.3 §28.2 5체 완성 */
-export function pickForgetter(tier: 'novice' | 'echo' | 'resonant' | 'origin'): EnemyArchetype {
+/** 청년기의 거짓말 — 잔잔 origin entry(400~999)에서 등장. 4체.
+ *  v2.3 §28.2 5체 완성 — origin tier 진입 후 첫 보스. */
+export const FORGETTER_OF_LATE_ADULT: EnemyArchetype = {
+  name: '잊혀진 자 — 청년의 거짓말',
+  description:
+    '너와 같은 키, 같은 자세. 입가에 한쪽만 올라간 미소가 굳어 있다. 손에는 너에게 했던 변명들이 한 묶음 쥐여 있다.',
+  encounter:
+    '거리의 끝에서 너의 한 시절이 너에게 변명을 건넨다. 목소리가 속삭인다 — "저 자는 네가 네 자신에게 한 거짓말로 만들어진 자다."',
+  hp: 110,
+};
+
+/** 어린 자신 — 잔잔 origin deeper(1000+)에서 등장. 5체 최종.
+ *  Phase 0는 단일 페이즈 archetype. Phase 2+에서 3페이즈 시스템으로 확장
+ *  (숨바꼭질 → 떼쓰기 → 마지막 부탁 — v2.3 §28.2). */
+export const FORGETTER_OF_INNER_CHILD: EnemyArchetype = {
+  name: '잊혀진 자 — 어린 너',
+  description:
+    '너의 무릎까지 오는 키. 한쪽 양말이 흘러내려 있다. 너를 올려다보는 눈이 너무 작아서, 너는 한참 만에야 그것이 너 자신이라는 것을 안다.',
+  encounter:
+    '거리의 끝에서 작은 손 하나가 너를 부른다. 목소리가 속삭인다 — "저 자는 네가 가장 처음 잊은 자다. 그리고 가장 늦게까지 너를 기다린 자다."',
+  hp: 130,
+};
+
+/** 잊혀진 자 선택 — 누적 잔잔에 따라 5체 분기.
+ *
+ *    잔잔        보스                       HP    체
+ *  --------      -----                      ----  --
+ *      0~  49    어린 시절의 잔해           60     1
+ *     50~ 149    청소년의 침묵              75     2
+ *    150~ 399    어른의 가면                95     3
+ *    400~ 999    청년의 거짓말             110     4
+ *   1000+        어린 너 (5~7세, 최종)     130     5
+ *
+ *  Phase 0는 5체 모두 단일 페이즈. v2.3 §28.2의 어린 자신 3-페이즈
+ *  시스템(숨바꼭질→떼쓰기→마지막 부탁)은 Phase 2+에서 도입. */
+export function pickForgetter(
+  tier: 'novice' | 'echo' | 'resonant' | 'origin',
+  totalResonance: number = 0,
+): EnemyArchetype {
   switch (tier) {
     case 'novice':
       return FORGETTER_OF_CHILDHOOD;
     case 'echo':
       return FORGETTER_OF_ADOLESCENCE;
     case 'resonant':
-    case 'origin':
       return FORGETTER_OF_ADULTHOOD;
+    case 'origin':
+      return totalResonance >= 1000
+        ? FORGETTER_OF_INNER_CHILD
+        : FORGETTER_OF_LATE_ADULT;
   }
 }
 
