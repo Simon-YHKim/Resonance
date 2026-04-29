@@ -6,10 +6,13 @@
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#0F0E14",
   "theme_color": "#0F0E14",
   "lang": "ko",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "categories": ["games", "entertainment"],
   "icons": [
     {
@@ -23,6 +26,20 @@
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "잔향의 자리로",
+      "short_name": "잔향",
+      "description": "마지막 캐릭터의 시트로 바로 이동",
+      "url": "./?action=sheet"
+    },
+    {
+      "name": "이름을 가진 자",
+      "short_name": "새 이름",
+      "description": "새로운 이름으로 잔향에 발을 들인다",
+      "url": "./?action=new"
     }
   ]
 }
