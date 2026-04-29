@@ -14,6 +14,8 @@ interface GameState {
   totalResonance: number;
   /** 마지막 생성된 캐릭터 (디바이스 1캐릭터 — Phase 0) */
   character: CharacterSheet | null;
+  /** 닉네임 입력 → 캐릭터 생성 사이의 임시 보관값 */
+  pendingNickname: string | null;
   /** 진행 중 전투 */
   combat: CombatState | null;
   /** 직전 전투 결말 */
@@ -21,6 +23,7 @@ interface GameState {
 
   /* actions */
   goTo: (screen: Screen) => void;
+  setPendingNickname: (n: string | null) => void;
   setCharacter: (c: CharacterSheet) => void;
   startCombat: (c: CombatState) => void;
   updateCombat: (patch: Partial<CombatState>) => void;
@@ -34,11 +37,13 @@ export const useGame = create<GameState>()(
       screen: 'title',
       totalResonance: 0,
       character: null,
+      pendingNickname: null,
       combat: null,
       lastOutcome: null,
 
       goTo: (screen) => set({ screen }),
-      setCharacter: (character) => set({ character }),
+      setPendingNickname: (pendingNickname) => set({ pendingNickname }),
+      setCharacter: (character) => set({ character, pendingNickname: null }),
       startCombat: (combat) => set({ combat, lastOutcome: null }),
       updateCombat: (patch) =>
         set((s) => (s.combat ? { combat: { ...s.combat, ...patch } } : s)),
@@ -52,6 +57,7 @@ export const useGame = create<GameState>()(
         set({
           screen: 'title',
           character: null,
+          pendingNickname: null,
           combat: null,
           lastOutcome: null,
         }),

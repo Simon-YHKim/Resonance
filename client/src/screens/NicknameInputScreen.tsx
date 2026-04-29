@@ -8,16 +8,14 @@ const MAX_LEN = 12;
 export function NicknameInputScreen() {
   const [value, setValue] = useState('');
   const goTo = useGame((s) => s.goTo);
-  const setPending = useGame.setState;
+  const setPendingNickname = useGame((s) => s.setPendingNickname);
 
   const trimmed = value.trim();
   const valid = trimmed.length >= 1 && trimmed.length <= MAX_LEN;
 
   const handleConfirm = () => {
     if (!valid) return;
-    // pendingNickname을 store에 임시 저장 — CharacterCreationScreen에서 사용
-    setPending({ character: null });
-    sessionStorage.setItem('resonance:pendingNickname', trimmed);
+    setPendingNickname(trimmed);
     goTo('characterCreation');
   };
 
