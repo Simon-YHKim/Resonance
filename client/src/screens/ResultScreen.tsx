@@ -4,6 +4,7 @@ import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
+import { haptic } from '@/utils/haptic';
 import { useEffect } from 'react';
 
 const COPY = {
@@ -39,16 +40,22 @@ export function ResultScreen() {
     if (!lastOutcome) goTo('title');
   }, [lastOutcome, goTo]);
 
-  if (!lastOutcome) return null;
-
-  const c = COPY[lastOutcome];
+  const c = lastOutcome ? COPY[lastOutcome] : null;
   const tier = getTier(totalResonance);
-  const categoryFooter = character ? endingFooter(character.category, lastOutcome) : null;
+  const categoryFooter =
+    character && lastOutcome ? endingFooter(character.category, lastOutcome) : null;
 
   // tier 승급 감지 — 전투 전 tier ≠ 전투 후 tier 인 경우
   const tierBefore =
     resonanceBeforeLastCombat !== null ? getTier(resonanceBeforeLastCombat) : null;
   const tierPromoted = tierBefore !== null && tierBefore.tier !== tier.tier;
+
+  // tier 승급 시 햅틱 — 결말 화면 진입 직후 1회
+  useEffect(() => {
+    if (tierPromoted) haptic('promotion');
+  }, [tierPromoted]);
+
+  if (!lastOutcome || !c) return null;
 
   const handleAgain = () => {
     const archetype = pickForgetter(tier.tier);
@@ -87,9 +94,11 @@ export function ResultScreen() {
         )}
 
         {tierPromoted && (
-          <p className="text-resonance leading-relaxed display-text mt-6 text-sm animate-fade-in-slow">
-            잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
-          </p>
+          <div className="mt-6 rounded-md px-4 py-3 bg-bg-elevated/40 animate-pulse-resonance">
+            <p className="text-resonance leading-relaxed display-text text-sm">
+              잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
+            </p>
+          </div>
         )}
 
         <div className="mt-12 border-t border-bg-elevated pt-6 space-y-2">
