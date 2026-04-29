@@ -20,6 +20,31 @@ export const FORGETTER_OF_CHILDHOOD: EnemyArchetype = {
   hp: 60,
 };
 
+/** 청소년기의 잊혀진 자 — 잔잔 echo tier 이상에서 등장. 더 단단한 무게감. */
+export const FORGETTER_OF_ADOLESCENCE: EnemyArchetype = {
+  name: '잊혀진 자 — 청소년의 침묵',
+  description:
+    '교복 칼라가 살짝 들려 있다. 입술은 굳게 닫혀 있고, 어깨는 어디에도 기대지 않는다.',
+  encounter:
+    '거리의 끝에서 너의 한 시절이 너를 정면으로 본다. 목소리가 속삭인다 — "저 자는 침묵으로 너를 가르친 자다."',
+  hp: 75,
+};
+
+/** 잊혀진 자 선택 — 잔잔 누적 tier에 따라.
+ *  novice: 어린 시절의 잔해 (Phase 0 기본)
+ *  echo+: 청소년의 침묵 (잔잔 50+에서 등장)
+ *  Phase 2+: 20대·30대·5~7세 추가 (v2.3 §28.2 보스 5체) */
+export function pickForgetter(tier: 'novice' | 'echo' | 'resonant' | 'origin'): EnemyArchetype {
+  switch (tier) {
+    case 'novice':
+      return FORGETTER_OF_CHILDHOOD;
+    case 'echo':
+    case 'resonant':
+    case 'origin':
+      return FORGETTER_OF_ADOLESCENCE;
+  }
+}
+
 interface NarrationVariants {
   /** 적 HP 비율(1.0 → 0.0)별 묘사 변주 — 0.66/0.33/0.0 임계 */
   high: string[];
