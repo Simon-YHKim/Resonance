@@ -28,6 +28,8 @@ const COPY = {
 export function ResultScreen() {
   const lastOutcome = useGame((s) => s.lastOutcome);
   const totalResonance = useGame((s) => s.totalResonance);
+  const lastCombatGain = useGame((s) => s.lastCombatGain);
+  const resonanceBeforeLastCombat = useGame((s) => s.resonanceBeforeLastCombat);
   const character = useGame((s) => s.character);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
@@ -42,6 +44,11 @@ export function ResultScreen() {
   const c = COPY[lastOutcome];
   const tier = getTier(totalResonance);
   const categoryFooter = character ? endingFooter(character.category, lastOutcome) : null;
+
+  // tier 승급 감지 — 전투 전 tier ≠ 전투 후 tier 인 경우
+  const tierBefore =
+    resonanceBeforeLastCombat !== null ? getTier(resonanceBeforeLastCombat) : null;
+  const tierPromoted = tierBefore !== null && tierBefore.tier !== tier.tier;
 
   const handleAgain = () => {
     const archetype = pickForgetter(tier.tier);
@@ -79,10 +86,29 @@ export function ResultScreen() {
           </p>
         )}
 
+        {tierPromoted && (
+          <p className="text-resonance leading-relaxed display-text mt-6 text-sm animate-fade-in-slow">
+            잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
+          </p>
+        )}
+
         <div className="mt-12 border-t border-bg-elevated pt-6 space-y-2">
-          <div className="flex justify-between text-sm">
+          <div className="flex justify-between text-sm items-baseline">
             <span className="text-fg-muted">누적 잔잔</span>
-            <span className="text-resonance display-text tabular-nums">{totalResonance}</span>
+            <span className="text-resonance display-text tabular-nums">
+              {totalResonance}
+              {lastCombatGain !== null && lastCombatGain !== 0 && (
+                <span
+                  className={
+                    'ml-2 text-xs ' +
+                    (lastCombatGain > 0 ? 'text-resonance/70' : 'text-fg-dim')
+                  }
+                >
+                  ({lastCombatGain > 0 ? '+' : ''}
+                  {lastCombatGain})
+                </span>
+              )}
+            </span>
           </div>
           <div className="flex justify-between text-xs">
             <span className="text-fg-dim">잔향이 부르는 호칭</span>

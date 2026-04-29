@@ -20,6 +20,10 @@ interface GameState {
   combat: CombatState | null;
   /** 직전 전투 결말 */
   lastOutcome: CombatOutcome | null;
+  /** 직전 전투에서 얻은 잔잔 (결말 화면 +N 표시용) */
+  lastCombatGain: number | null;
+  /** 직전 전투 시작 시점의 누적 잔잔 (tier 승급 감지용) */
+  resonanceBeforeLastCombat: number | null;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -40,17 +44,25 @@ export const useGame = create<GameState>()(
       pendingNickname: null,
       combat: null,
       lastOutcome: null,
+      lastCombatGain: null,
+      resonanceBeforeLastCombat: null,
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
       setCharacter: (character) => set({ character, pendingNickname: null }),
-      startCombat: (combat) => set({ combat, lastOutcome: null }),
+      startCombat: (combat) =>
+        set((s) => ({
+          combat,
+          lastOutcome: null,
+          resonanceBeforeLastCombat: s.totalResonance,
+        })),
       updateCombat: (patch) =>
         set((s) => (s.combat ? { combat: { ...s.combat, ...patch } } : s)),
       endCombat: (outcome, gain) =>
         set((s) => ({
           lastOutcome: outcome,
           totalResonance: s.totalResonance + gain,
+          lastCombatGain: gain,
           combat: null,
         })),
       reset: () =>
@@ -60,6 +72,8 @@ export const useGame = create<GameState>()(
           pendingNickname: null,
           combat: null,
           lastOutcome: null,
+          lastCombatGain: null,
+          resonanceBeforeLastCombat: null,
         }),
     }),
     {

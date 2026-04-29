@@ -9,6 +9,8 @@ const initialState = {
   pendingNickname: null,
   combat: null,
   lastOutcome: null,
+  lastCombatGain: null,
+  resonanceBeforeLastCombat: null,
 };
 
 describe('gameStore', () => {
@@ -103,6 +105,30 @@ describe('gameStore', () => {
     expect(s.lastOutcome).toBe('victory');
     expect(s.totalResonance).toBe(55);
     expect(s.combat).toBeNull();
+  });
+
+  it('startCombat captures totalResonance into resonanceBeforeLastCombat', () => {
+    useGame.setState({ totalResonance: 145 });
+    const combat: CombatState = {
+      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      enemy: { name: 'X', description: 'Y', encounter: 'Z', hp: 60, maxHp: 60 },
+      turn: 0,
+      resonance: 0,
+    };
+    useGame.getState().startCombat(combat);
+    expect(useGame.getState().resonanceBeforeLastCombat).toBe(145);
+  });
+
+  it('endCombat records lastCombatGain', () => {
+    const combat: CombatState = {
+      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      enemy: { name: 'X', description: 'Y', encounter: 'Z', hp: 60, maxHp: 60 },
+      turn: 0,
+      resonance: 0,
+    };
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('victory', 38);
+    expect(useGame.getState().lastCombatGain).toBe(38);
   });
 
   it('reset clears character/combat/outcome but not implementation', () => {
