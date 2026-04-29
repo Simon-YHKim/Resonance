@@ -10,6 +10,7 @@ import {
   evaluateOutcome,
   resonanceBonusFor,
 } from '@/services/combatOutcome';
+import { haptic } from '@/utils/haptic';
 
 type Status = 'encounter' | 'idle' | 'narrating' | 'resolving';
 
@@ -71,6 +72,9 @@ export function CombatScreen() {
   const handleAction = async (action: CombatAction, cost: number) => {
     if (status !== 'idle') return;
     if (player.stamina < cost) return;
+
+    // 액션별 햅틱 — 공격은 firm(중요), 대화는 soft, 도망은 tap
+    haptic(action === 'attack' ? 'firm' : action === 'dialogue' ? 'soft' : 'tap');
 
     setStatus('narrating');
     setNarration('');
@@ -178,8 +182,9 @@ export function CombatScreen() {
                          px-2 py-3 border border-bg-elevated rounded-sm
                          bg-bg-secondary
                          enabled:hover:border-resonance/60 enabled:active:bg-bg-elevated
+                         enabled:active:scale-[0.97]
                          disabled:opacity-40 disabled:cursor-not-allowed
-                         transition-colors"
+                         transition-all duration-150"
             >
               <span className="display-text text-base text-fg-primary">{label}</span>
               <span className="text-[0.6rem] text-fg-dim mt-1 tabular-nums">−{cost} 스태</span>
