@@ -6,7 +6,11 @@
 
 @layer base {
   html, body, #root {
-    height: 100%;
+    /* 100vh fallback + 100dvh for modern mobile browsers
+     * — dvh removes 주소창/시스템 nav bar from viewport height,
+     *   keeping bottom buttons (e.g. "이름을 가진 자") in tap range. */
+    height: 100vh;
+    height: 100dvh;
     background: var(--bg-primary);
     color: var(--fg-primary);
     font-family: var(--font-body);
