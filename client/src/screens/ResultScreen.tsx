@@ -7,6 +7,7 @@ import { endingFooter } from '@/services/categoryEndings';
 import { crossedMilestone } from '@/services/milestones';
 import { SHARD_META } from '@/services/shards';
 import { SHAPE_META, classifyShape } from '@/services/contribution';
+import { CHAPTERS, chapterForTier } from '@/services/chapters';
 import { haptic } from '@/utils/haptic';
 import { useCountUp } from '@/utils/useCountUp';
 import { useEffect } from 'react';
@@ -60,6 +61,14 @@ export function ResultScreen() {
   const tierBefore =
     resonanceBeforeLastCombat !== null ? getTier(resonanceBeforeLastCombat) : null;
   const tierPromoted = tierBefore !== null && tierBefore.tier !== tier.tier;
+
+  // 챕터 진입 — tier 승급 시 챕터 변경 여부
+  const chapterBefore = tierBefore
+    ? chapterForTier(tierBefore.tier, resonanceBeforeLastCombat ?? 0)
+    : null;
+  const chapterNow = chapterForTier(tier.tier, totalResonance);
+  const chapterChanged = chapterBefore !== null && chapterBefore !== chapterNow;
+  const newChapter = chapterChanged ? CHAPTERS[chapterNow] : null;
 
   // 마일스톤 — tier 승급 없을 때만 표시 (중첩 방지)
   const milestone =
@@ -116,10 +125,27 @@ export function ResultScreen() {
         )}
 
         {tierPromoted && (
-          <div className="mt-6 rounded-md px-4 py-3 bg-bg-elevated/40 animate-pulse-resonance">
-            <p className="text-resonance leading-relaxed display-text text-sm">
-              잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
-            </p>
+          <div className="mt-6 rounded-md px-4 py-4 bg-bg-elevated/40 border border-resonance/30 animate-pulse-resonance">
+            {newChapter ? (
+              <>
+                <p className="text-fg-dim text-[0.6rem] tracking-[0.3em] uppercase mb-1">
+                  {newChapter.numeral} 진입
+                </p>
+                <p className="display-text text-resonance text-base mb-2">
+                  {newChapter.title}
+                </p>
+                <p className="text-fg-muted text-xs leading-relaxed italic">
+                  {newChapter.intro}
+                </p>
+                <p className="text-resonance/60 text-[0.65rem] mt-3">
+                  잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
+                </p>
+              </>
+            ) : (
+              <p className="text-resonance leading-relaxed display-text text-sm">
+                잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
+              </p>
+            )}
           </div>
         )}
 

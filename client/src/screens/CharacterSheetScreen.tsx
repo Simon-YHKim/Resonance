@@ -10,6 +10,7 @@ import {
   formatMomentTime,
   shortLineFor,
 } from '@/services/memoryMoments';
+import { CHAPTERS, chapterForTier } from '@/services/chapters';
 import type { ShardId } from '@/types/game';
 
 const CATEGORY_LABEL: Record<'A' | 'B' | 'D' | 'H', string> = {
@@ -40,6 +41,7 @@ export function CharacterSheetScreen() {
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const tier = getTier(totalResonance);
+  const chapter = CHAPTERS[chapterForTier(tier.tier, totalResonance)];
   // 시트 타임라인은 최근 6개만 (스크롤 부담 방지)
   const recentMoments = memoryMoments.slice(0, 6);
 
@@ -78,7 +80,12 @@ export function CharacterSheetScreen() {
   return (
     <div className="vignette min-h-full flex flex-col px-8 py-10 game-ui">
       <div className="max-w-sm w-full mx-auto flex-1 overflow-y-auto pb-6">
-        <p className="text-fg-dim text-xs tracking-[0.3em] uppercase mb-2">이름을 가진 자</p>
+        <div className="flex justify-between items-baseline mb-2">
+          <p className="text-fg-dim text-xs tracking-[0.3em] uppercase">이름을 가진 자</p>
+          <p className="text-fg-dim text-[0.65rem] tracking-[0.2em] tabular-nums">
+            {chapter.numeral} · {chapter.title}
+          </p>
+        </div>
         <h2 className="display-text text-3xl text-fg-primary mb-1">{character.nickname}</h2>
         <p className="text-resonance text-sm display-text mb-8">— {character.startingClass}</p>
 
