@@ -303,6 +303,10 @@ export function CombatScreen() {
         totalTurns: nextTurn,
       });
 
+      // Bestiary — 만남 기록 갱신 (사용자 의도: "처음 만난 몹이 아니라면
+      // 과거 만났던 몹의 스탯/체력 보여주자")
+      useGame.getState().recordBossEncounter(enemy.name, enemy.maxHp, outcome);
+
       // 결말 라인 — 도스 풍 마지막 줄
       const outcomeLabel =
         outcome === 'victory'

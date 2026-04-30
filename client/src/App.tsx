@@ -7,6 +7,7 @@ import { CharacterSheetScreen } from '@/screens/CharacterSheetScreen';
 import { MapScreen } from '@/screens/MapScreen';
 import { NPCScreen } from '@/screens/NPCScreen';
 import { ShopScreen } from '@/screens/ShopScreen';
+import { BestiaryScreen } from '@/screens/BestiaryScreen';
 import { CombatScreen } from '@/screens/CombatScreen';
 import { ResultScreen } from '@/screens/ResultScreen';
 import { DebugPanel, isDebugMode } from '@/components/DebugPanel';
@@ -21,6 +22,7 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   map: MapScreen,
   npc: NPCScreen,
   shop: ShopScreen,
+  bestiary: BestiaryScreen,
   combat: CombatScreen,
   result: ResultScreen,
 };

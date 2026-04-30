@@ -132,6 +132,12 @@ export function HearthScreen() {
             body="네가 모은 조각으로 잠시의 위로를 산다."
             onClick={() => goTo('shop')}
           />
+          <HearthCard
+            title="잊혀진 자들의 도감"
+            subtitle="만남으로 드러난다"
+            body="너는 누구를 보았고, 누구를 아직 보지 못했는가."
+            onClick={() => goTo('bestiary')}
+          />
         </div>
       </div>
 

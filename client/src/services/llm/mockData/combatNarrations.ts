@@ -9,6 +9,8 @@ export interface EnemyArchetype {
   /** 첫 조우 묘사 — 목소리 화법 */
   encounter: string;
   hp: number;
+  /** 배경 스토리 — Bestiary 항상 노출 (만나기 전에도). v2.3 §28.2 */
+  background: string;
 }
 
 export const FORGETTER_OF_CHILDHOOD: EnemyArchetype = {
@@ -18,6 +20,8 @@ export const FORGETTER_OF_CHILDHOOD: EnemyArchetype = {
   encounter:
     '거리의 끝에서 익숙한 그림자가 일어선다. 목소리가 속삭인다 — "저 자는 너의 어떤 부분을 잊은 자다."',
   hp: 60,
+  background:
+    '한 거리에서 처음 너의 이름이 어디론가 흘러갔을 때, 거기 남은 그림자가 이 자다. 너는 그 그림자가 너를 따라온 줄도 모른 채 자랐다. 그리고 어느 날, 거리의 끝에서 그 그림자가 너를 기다리고 있었다.',
 };
 
 /** 청소년기의 잊혀진 자 — 잔잔 echo tier 이상에서 등장. 더 단단한 무게감. */
@@ -28,6 +32,8 @@ export const FORGETTER_OF_ADOLESCENCE: EnemyArchetype = {
   encounter:
     '거리의 끝에서 너의 한 시절이 너를 정면으로 본다. 목소리가 속삭인다 — "저 자는 침묵으로 너를 가르친 자다."',
   hp: 75,
+  background:
+    '어느 시기, 너는 한 마디도 하지 못한 자리에 한 박자 너무 오래 앉아 있었다. 그 자리에 묵힌 침묵이 옷이 되고, 어깨가 되고, 한 사람의 윤곽이 되었다. 그것이 이 자다.',
 };
 
 /** 성인기의 잊혀진 자 — 잔잔 resonant tier(150~399)에서 등장. 가장 무거운 무게. */
@@ -38,6 +44,8 @@ export const FORGETTER_OF_ADULTHOOD: EnemyArchetype = {
   encounter:
     '거리의 끝에서 너의 한 시기가 손을 내밀어 인사한다. 목소리가 속삭인다 — "저 자는 너의 가면을 너보다 먼저 익힌 자다."',
   hp: 95,
+  background:
+    '너는 다려진 셔츠를 입고 한 사람의 자리에 앉아 본 적이 있다. 그 자리에 너의 눈빛이 잠시 어디에도 닿지 않았다. 그 어디에도 닿지 않은 눈빛이 모여 한 사람을 만들었다. 그 사람이 이 자다.',
 };
 
 /** 청년기의 거짓말 — 잔잔 origin entry(400~999)에서 등장. 4체.
@@ -49,6 +57,8 @@ export const FORGETTER_OF_LATE_ADULT: EnemyArchetype = {
   encounter:
     '거리의 끝에서 너의 한 시절이 너에게 변명을 건넨다. 목소리가 속삭인다 — "저 자는 네가 네 자신에게 한 거짓말로 만들어진 자다."',
   hp: 110,
+  background:
+    '너는 너 자신에게 한 마디씩 거짓말을 했다. 어느 날엔 그것이 위로였고, 어느 날엔 도망이었다. 그 거짓말 한 줄 한 줄이 모여 너와 같은 키, 같은 자세의 사람을 만들었다. 그 사람이 이 자다.',
 };
 
 /** 어린 자신 — 잔잔 origin deeper(1000+)에서 등장. 5체 최종.
@@ -61,7 +71,23 @@ export const FORGETTER_OF_INNER_CHILD: EnemyArchetype = {
   encounter:
     '거리의 끝에서 작은 손 하나가 너를 부른다. 목소리가 속삭인다 — "저 자는 네가 가장 처음 잊은 자다. 그리고 가장 늦게까지 너를 기다린 자다."',
   hp: 130,
+  background:
+    '너의 가장 처음 자리에는 한 작은 사람이 있었다. 너는 그 사람을 두고 자랐다. 그 사람은 너의 자리에서 사라지지 않고, 거리에 한 박자 늦게 따라왔다. 너의 잔향이 가장 깊은 자리에 닿을 때, 그 사람은 너의 손에 닿을 만큼 가까워진다.',
 };
+
+/** Bestiary 카탈로그 — 만남 추적용 모든 5 archetype 목록 */
+export const ALL_ARCHETYPES: ReadonlyArray<EnemyArchetype> = [
+  FORGETTER_OF_CHILDHOOD,
+  FORGETTER_OF_ADOLESCENCE,
+  FORGETTER_OF_ADULTHOOD,
+  FORGETTER_OF_LATE_ADULT,
+  FORGETTER_OF_INNER_CHILD,
+];
+
+/** 이름으로 archetype 조회 (Bestiary 매핑용). 매칭 없으면 null. */
+export function archetypeByName(name: string): EnemyArchetype | null {
+  return ALL_ARCHETYPES.find((a) => a.name === name) ?? null;
+}
 
 /** 잊혀진 자 선택 — 누적 잔잔에 따라 5체 분기.
  *
