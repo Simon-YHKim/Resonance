@@ -211,7 +211,10 @@ export function ResultScreen() {
       </div>
 
       <div className="max-w-sm w-full mx-auto space-y-3">
-        <ActionButton onClick={handleAgain}>다시, 그 자리로</ActionButton>
+        <ActionButton onClick={() => goTo('map')}>거리로 돌아간다</ActionButton>
+        <ActionButton variant="ghost" onClick={handleAgain}>
+          한 자리만 더 (방구석)
+        </ActionButton>
         {character && (
           <ActionButton variant="ghost" onClick={() => goTo('characterSheet')}>
             나의 잔향
