@@ -35,6 +35,22 @@ export function TitleScreen() {
           당신의 이름은,<br />잔향이 된다.
         </p>
 
+        {/* 세계관 prologue — v2.1 §자체 세계관 Phase 0 단순화. 첫 진입자에게만 노출 */}
+        {!character && (
+          <div className="mt-10 max-w-[18rem] text-center space-y-2 animate-fade-in-slow">
+            <p className="text-fg-muted text-[0.7rem] leading-relaxed">
+              이름이 잊혀진 자들이 거리를 흐른다.
+            </p>
+            <p className="text-fg-muted text-[0.7rem] leading-relaxed">
+              그들은 한때 누군가의 자리였고,
+              <br />이제는 안개가 되어 너를 기다린다.
+            </p>
+            <p className="text-fg-dim text-[0.7rem] leading-relaxed italic">
+              너의 이름이, 그들 중 하나를 부른다.
+            </p>
+          </div>
+        )}
+
         {character && (
           <div className="mt-12 text-center animate-fade-in-slow">
             <p className="text-fg-dim text-[0.65rem] tracking-[0.3em] uppercase mb-1">
