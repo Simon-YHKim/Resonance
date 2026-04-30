@@ -3,6 +3,7 @@ import { ActionButton } from '@/components/ActionButton';
 import { StatBar } from '@/components/StatBar';
 import { VoiceBubble } from '@/components/VoiceBubble';
 import { CombatLogPanel } from '@/components/CombatLogPanel';
+import { BattleVisualPanel } from '@/components/BattleVisualPanel';
 import { mockLLM } from '@/services/llm/MockLLMService';
 import { useGame } from '@/store/gameStore';
 import type { CombatAction, CombatTurnResult } from '@/types/game';
@@ -323,12 +324,12 @@ export function CombatScreen() {
   return (
     <div className="vignette min-h-full flex flex-col px-6 py-8 game-ui">
       <div className="max-w-sm w-full mx-auto flex-1 flex flex-col">
-        {/* 적 정보 */}
-        <div className="mb-4">
-          <p className="text-fg-dim text-[0.65rem] tracking-[0.2em] uppercase mb-1">조우</p>
-          <p className="display-text text-lg text-danger mb-2">{enemy.name}</p>
-          <StatBar label="잊혀진 자" value={enemy.hp} max={enemy.maxHp} color="hp" />
-        </div>
+        {/* 포켓몬식 전투 비주얼 — 적/플레이어 카드 (Phase 1+ 이미지 swap) */}
+        <BattleVisualPanel
+          combat={combat}
+          tier={getTier(useGame.getState().totalResonance)}
+          playerNickname={useGame.getState().character?.nickname ?? null}
+        />
 
         {/* 내레이션 영역 — 현재 turn의 묘사 */}
         <div className="my-3 min-h-[80px]">
