@@ -1,163 +1,163 @@
-# 잔향 — Resonance: Echoes of a Forgotten Self
+# 잔향 (Resonance) — 프로젝트 문서 패키지
 
-> 당신의 이름은, 잔향이 된다.
+> **이 패키지는 Claude Code가 잔향(殘響, Resonance: Echoes of a Forgotten Self) 프로젝트를 빌드하기 위한 모든 결정사항·세계관·시스템 명세를 담고 있습니다.**
 
-LLM 기반 GPS 텍스트 MMORPG의 **Phase 0 검증 프로토타입**.
-한 줄 후크: *"이름을 한 줄 입력하면, the Voice가 당신만의 캐릭터를 만들어 잔향의 거리로 보낸다."*
-
-기획서는 이 작업의 입력으로 받은 7개 마크다운(v1.0 ~ v2.4)에 정리되어 있다.
-이 저장소는 그중 v1.0 §6 **Phase 0** 단계의 구현체다.
+**프로젝트 한 줄 정의**: LLM 기반 GPS 텍스트 MMORPG. 어른이 되며 잘려나간 자기와 한 번도 되어보지 못한 자기를 한 조각씩 만나며, 내 안에 살아 있는 모든 가능성을 다시 그리는 *위로하는 게임*.
 
 ---
 
-## 무엇이 들어 있나
+## 🚨 Claude Code에게 — 가장 먼저 읽을 것
 
-| 화면 | 흐름 |
-|---|---|
-| `TitleScreen` | "이름을 가진 자" CTA |
-| `NicknameInputScreen` | the Voice의 첫 발화 + 닉네임 입력 (1~12자) |
-| `CharacterCreationScreen` | 분류(`classify`) → 캐릭터 생성(`generate`) → voice 첫 줄 스트리밍 |
-| `CharacterSheetScreen` | 컨셉·외형·시작 클래스·연결 키워드 |
-| `CombatScreen` | "잊혀진 자 — 어린 시절의 잔해" 1체 / 공격·대화·도망 / 5턴 제한 |
-| `ResultScreen` | 승·패·도망 결말 + 누적 잔잔 게이지 |
+**다음 순서로 읽어주세요. 절대 순서를 바꾸지 마세요:**
 
-핵심 USP는 **닉네임 → LLM 변환**(기획서 v2.4 §27).
-Phase 0는 카테고리 **A / D / H** 3종을 키워드 매칭으로 모킹한다 — 실 LLM 연결은 Phase 1.
+1. **`docs/00_START_HERE/PROJECT_SUMMARY.md`** ← *3분 안에 프로젝트 전체를 파악*
+2. **`docs/00_START_HERE/READ_ORDER.md`** ← *나머지 11개 문서를 어떤 순서로 읽을지*
+3. **`docs/01_CORE_DECISIONS/01_종합정리_v1.2_최신_진실의_원천.md`** ← *진실의 원천. 모든 결정의 토대*
 
-| 카테고리 | 의미 | 처리 |
-|---|---|---|
-| A | 가족 호칭 (`엄마`, `아빠`, `Mom`, `누나`, …) | 어린시절·추억 키워드 강한 캐릭터 템플릿 5종 |
-| D | 위험 단어 (`어둠`, `그림자`, `잊혀진`, `자살`, …) | 그림자/잿빛 추상 어휘만 — 자해 직접 묘사 절대 금지 |
-| H | 그 외 일반 닉네임 | 표준 RPG 캐릭터 템플릿 8종 |
-
-같은 닉네임은 djb2 해시로 **결정적**으로 같은 템플릿에 매핑 → 어뷰저 도배 차단.
+이후는 READ_ORDER.md를 따라가시면 됩니다.
 
 ---
 
-## 기술 스택
+## ⚠️ 충돌 해결 규칙
+
+문서 간 결정이 충돌할 때:
 
 ```
-client/                     pnpm + Vite + React 18 + TypeScript + TailwindCSS + Zustand
-  src/services/llm/         LLMService 인터페이스 + MockLLMService
-  src/services/llm/mockData/  분류 룰북, 캐릭터 템플릿 풀, 전투 묘사 풀
-  src/screens/              6개 화면 상태머신
-  src/components/           StreamingText, StatBar, VoiceBubble, ActionButton
-
-worker/                     Cloudflare Workers + Hono — Phase 1 placeholder (`/api/health`만)
-
-capacitor.config.ts         appId=com.simon.resonance, appName=잔향
+v1.2 > v1.1 > v1.0 > 세계관 바이블 v0.1 > 캐릭터 도감 v0.2 > v2.4 > v2.3 > v2.2 > v2.1 > v2.0 > v1.0 종합가이드 > 원본 v1
 ```
 
-LLM은 모두 **`MockLLMService`**가 처리한다 (`client/src/services/llm/MockLLMService.ts`). API 키 없이 풀 흐름이 동작한다.
+**즉**: 종합정리 v1.2가 절대 우선. 아래로 갈수록 *세부 명세*는 살아있되 *철학·톤·메인 주제 결정*에 대해서는 v1.2가 이긴다.
 
 ---
 
-## 빠른 시작
+## 📁 폴더 구조
 
-```bash
-# 저장소 루트에서
-pnpm install
-pnpm dev          # 5173 포트에서 잔향 PWA — 모바일 사이즈로 보면 가장 좋다
-pnpm test         # 닉네임 분류 단위 테스트
-pnpm typecheck    # tsc --noEmit
-pnpm build        # client/dist 산출물
+```
+docs/
+├── 00_START_HERE/                ← 이 폴더부터 (필수)
+│   ├── PROJECT_SUMMARY.md       (3분 요약)
+│   └── READ_ORDER.md            (읽는 순서)
+│
+├── 01_CORE_DECISIONS/            ← 진실의 원천
+│   └── 01_종합정리_v1.2_최신_진실의_원천.md
+│
+├── 02_WORLDBUILDING/             ← 세계관과 캐릭터
+│   ├── 02_세계관바이블_v0.1.md
+│   └── 03_캐릭터도감_세계관상세_v0.2.md
+│
+├── 03_SYSTEM_SPECS/              ← 기술 명세 (구버전 기획서 6개)
+│   ├── 01_v1.0_종합가이드_인프라_LLM라우팅.md
+│   ├── 02_v2.0_방구석모드_사망_스프린트.md
+│   ├── 03_v2.1_추억거점_연령인증_매크로.md
+│   ├── 04_v2.2_UI색감_기억의조각_LLM컨텍스트.md
+│   ├── 05_v2.3_BOTW진행_엔딩_NPC_기여도.md
+│   └── 06_v2.4_닉네임시스템_종합점검.md
+│
+└── 05_ARCHIVE/                   ← 변천사 (참고용)
+    ├── 00_원본_v1_스태미나기반.md
+    ├── 05_종합정리_v1.0_변천사.md
+    └── 05_종합정리_v1.1_변천사.md
 ```
 
 ---
 
-## Android APK 빌드
+## 🎯 빌드 시 핵심 원칙 5가지
 
-> Android Studio + JDK 17 + Android SDK 34가 로컬에 설치되어 있어야 한다.
-> 이 저장소에는 의도적으로 `client/android/`를 커밋하지 않는다 — 처음 한 번 직접 생성한다.
+이건 Claude Code가 잔향의 **5대 영혼**을 코드로 옮길 때 절대 흐려져선 안 되는 것:
 
-```bash
-cd client
-pnpm build                              # dist/ 만들기
-pnpm exec cap add android               # 1회. client/android/ 가 생성됨
-pnpm exec cap sync android              # 매 빌드마다
-pnpm exec cap open android              # Android Studio 열림
-# 또는 CLI로:
-cd android && ./gradlew assembleDebug
-# → client/android/app/build/outputs/apk/debug/app-debug.apk
+1. **메타피직스 갈래 D — 기억의 꿈** (환각·평행세계·데이터 X)
+2. **the Voice = 어린 자신의 수호자 자아** (어린 자신 본인 X)
+3. **보스 = 모남(잘려나간) + 꿈자국(되어보지 못한) 두 결의 조각** (적 X, 회복 X, 가치 판단 X)
+4. **위로하는 게임** (싸구려 위안 X, 훈계 X, 인정 + 동행 O)
+5. **미완성의 보존** (간직이 곧 행복. 완성을 향한 게임 X)
+
+---
+
+## 💡 빌드 우선순위 (v2.4에서 결정됨)
+
+**MVP 필수 5가지 — 이것이 안 되면 출시하지 마세요:**
+
+1. LLM 응답 체감 속도 1.5초 (스트리밍 + Flash-Lite 라우팅)
+2. 닉네임 카테고리 A·D·H 변환 + 게임 메커니즘 5종
+3. 1장 압축(45분) + 90초 튜토리얼 + 어린시절 보스 1~3체
+4. 광고+구독+닉네임재생성 IAP 3축 BM
+5. 디스코드 + 스토브 인디 + ASO
+
+**Phase 2 (출시 +3개월)**: 닉네임 B·C·E 추가, 보스 5체 완성, 시즌 패스, 5분 세션 모드
+
+**Phase 3 (출시 +6개월)**: Steam 글로벌, 일본어/영어 로컬, 카테고리 F·G, 음성 입력
+
+---
+
+## 📌 의사결정자 (Simon) 연락 필요한 시점
+
+다음 상황에서는 코드를 작성하기 전에 **Simon에게 확인 요청**:
+
+- 5대 영혼 중 하나라도 흔들릴 위험이 있을 때
+- 메인 주제 한 문장과 충돌하는 결정이 필요할 때
+- v1.2 종합정리에 명시되지 않은 *서사·톤* 영역의 새 결정
+- 6엔딩 텍스트에 영향을 미치는 시스템 변경
+- 종합 점수 메커니즘 룰 표 가중치 변경
+
+**확인 없이 진행해도 되는 것**:
+- 시스템 명세에 이미 박힌 기술 결정 (Cloudflare 스택 등)
+- 코드 구조·리팩토링·성능 최적화
+- 명세 범위 안에서의 자유로운 구현 디테일
+
+---
+
+## 🔧 기술 스택 (확정됨)
+
+```
+Frontend:    Capacitor + React + Vite + TailwindCSS + Phaser 3 (TypeScript)
+Backend:     Cloudflare Workers + Hono + Durable Objects(SQLite) + D1 + KV + R2
+Auth:        Clerk (10K MAU 무료) + 포트원 본인인증
+LLM Routing: AI Gateway 기반 다층
+  - Router/Filter:     GPT-5 Nano 또는 Workers AI (무료)
+  - General:           Gemini 2.5 Flash-Lite ($0.10/$0.40)
+  - Character/Voice:   Claude Haiku 4.5 ($1/$5)
+  - Boss/Critical:     Claude Sonnet 4.6 ($3/$15)
+  - Ending Image:      Gemini 3.1 Flash Image (Nano Banana Pro) $0.067/장
+Tilemap:     Tiled Map Editor + Kenney RPG Urban/Roguelike (CC0)
+Bot Block:   Cloudflare Turnstile
+Secrets:     Cloudflare Workers Secrets (.env 절대 X)
 ```
 
 ---
 
-## End-to-End 검증 (90초 온보딩)
+## 📊 비용/매출 시뮬레이션 (DAU 1만 기준)
 
-1. `pnpm dev` → 브라우저 5173 (모바일 뷰)
-2. **이름을 가진 자** 클릭 → 닉네임 입력 화면 도달 < 5초
-3. `엄마` 입력 → A 카테고리 → "그 이름을… 그렇게 부르던 사람이 있었지." 스트리밍
-4. `민수` 입력 → H 카테고리 → 일반 캐릭터
-5. `어둠` 입력 → D 카테고리 → 자해 키워드 등장하지 않음을 확인
-6. **원의 자리로** → 공격 / 대화 / 도망 → 첫 토큰 < 1초, 잊혀진 자 처치 가능
-7. 결말 화면 → 누적 잔잔이 `localStorage['resonance:game']`에 저장됨
-
----
-
-## 디자인 토큰 (v2.2 K-콘텐츠 모던 톤)
-
-`client/src/styles/tokens.css` — 어두운 파스텔 1프리셋:
-
-| 변수 | 값 | 의미 |
-|---|---|---|
-| `--bg-primary` | `#0F0E14` | 깊은 자정 |
-| `--fg-primary` | `#E8E3D5` | 바랜 종이 |
-| `--accent-resonance` | `#B89DD0` | 잔향 — 흐릿한 라벤더 |
-| `--accent-origin` | `#D4A574` | 원 — 빛 바랜 황금 |
-
-Phase 1+에서 멜랑콜리 / 사이렌의 새벽 2개 프리셋 추가 예정 (v2.4 §28.5).
+```
+월 매출:        ₩1,250만 (광고 ₩1,000만 + 구독 ₩245만 + IAP)
+월 LLM 비용:    ₩152만 (매출의 12%)
+손익분기:       DAU 3,000부터 1인 생활비 충당
+1인 클리어 엔딩: $1.07 (Nano Banana Pro 16장)
+```
 
 ---
 
-## Phase 1로 넘어갈 때
+## 📅 12개월 로드맵
 
-`MockLLMService` → 실제 LLM 라우터 교체:
-
-1. **API 키 발급**
-   - [Anthropic Console](https://console.anthropic.com/) — Haiku 4.5 (캐릭터 생성)
-   - [Google AI Studio](https://aistudio.google.com/) — Gemini 2.5 Flash-Lite (분류·전투)
-   - 두 곳 모두 카드 결제 한도를 **$30/월**로 설정 (v1.0 §7 Day 1)
-2. **Cloudflare**
-   - `wrangler login` → AI Gateway 켜기
-   - `worker/wrangler.toml`의 D1 / KV / vars 주석을 풀기
-   - `wrangler deploy`
-3. **클라이언트**
-   - `client/src/services/llm/AnthropicHaikuService.ts` 추가 (이 인터페이스를 따른다)
-   - `client/src/services/llm/GeminiFlashLiteService.ts` 추가
-   - `MockLLMService` import 1줄을 환경 변수로 swap
-
-Phase 1 추가 작업 (기획서 v1.0 §6):
-- Capacitor Geolocation (`@capacitor/geolocation`)
-- 닉네임 카테고리 B/C/E (Phase 2: F/G)
-- 어린시절 보스 1~3체 (이름·성격·대사 차별화)
-- 잔잔 누적의 게임 메커니즘 연결 (v2.3)
-- Cloudflare Turnstile + 사용자별 rate limit + AI Gateway 예산 캡 (v1.0 §5)
+```
+M-6 ~ M-3:    MVP 알파
+M-3 ~ M-1:    CBT 디스코드 시드 200명
+M-1 ~ M0:     OBT 스토브 인디 데모
+M0:           정식 출시 (한국)
+M+1 ~ M+3:    Phase 2 (보스 5체 완성, 시즌 패스)
+M+3 ~ M+6:    Phase 3 (Steam 글로벌, 일본어/영어)
+M+6 ~ M+12:   1년 평가
+```
 
 ---
 
-## 의도적으로 Phase 0에서 제외한 것
+## 🌟 최종 한 마디
 
-- 실 LLM API 호출
-- Cloudflare Workers 배포 (스텁 코드만)
-- GPS / 위치 기반
-- 인증 / 소셜 로그인
-- 광고 / 구독 / IAP
-- 닉네임 카테고리 B / C / E / F / G
-- 어린시절 보스 5체 (Phase 0는 일반 잊혀진 자 1체)
-- 길드 / 멀티플레이 / Durable Objects
-- Phaser 3 스프라이트 (Phase 0는 텍스트 + CSS 전이만)
+> ***"잔향은 — 사회에 맞춰지며 잘려나간 자기와 한 번도 되어보지 못한 자기를, 한 조각씩 다시 만나며, 내 안에 살아 있는 모든 가능성을 다시 그리는 이야기다."***
+
+이 한 문장이 잔향의 모든 결정의 출발점입니다. Claude Code가 어떤 결정에서 막히면 — 이 한 문장에 부합하는지 자문하세요.
 
 ---
 
-## 라이선스 / 워딩
-
-기획서 v1.0 인게임 워딩 사전 준수:
-
-| 한국어 | 영문 |
-|---|---|
-| 잔향(殘響) | *Resonance* |
-| 이름을 가진 자 | *the Named* |
-| 목소리 | *the Voice* |
-| 잊혀진 자 | *the Forgetter* |
-| 4대 키워드 | 희생 · 꿈과현실 · 어린시절 · 추억 |
+**문서 패키지 버전**: 2026-04-29
+**작성자**: Simon-YHKim + Claude (Anthropic)
+**저장소**: github.com/Simon-YHKim/Resonance/tree/Story
