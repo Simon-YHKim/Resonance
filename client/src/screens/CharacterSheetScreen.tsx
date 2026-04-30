@@ -3,6 +3,8 @@ import { useGame } from '@/store/gameStore';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
+import { SHARD_META } from '@/services/shards';
+import type { ShardId } from '@/types/game';
 
 const CATEGORY_LABEL: Record<'A' | 'B' | 'D' | 'H', string> = {
   A: '가족 호칭',
@@ -23,9 +25,18 @@ export function CharacterSheetScreen() {
   const character = useGame((s) => s.character);
   const totalResonance = useGame((s) => s.totalResonance);
   const combatCount = useGame((s) => s.combatCount);
+  const shards = useGame((s) => s.shards);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const tier = getTier(totalResonance);
+
+  // 같은 id 중복 보유는 카운트로 합치기 (5체 컬렉션 시각화)
+  const shardCounts = shards.reduce<Record<string, number>>((acc, s) => {
+    acc[s.id] = (acc[s.id] ?? 0) + 1;
+    return acc;
+  }, {});
+  const ownedIds = Object.keys(shardCounts) as ShardId[];
+  const totalShardKinds = Object.keys(SHARD_META).length;
 
   if (!character) {
     return (
@@ -97,6 +108,36 @@ export function CharacterSheetScreen() {
             <Row k="잊혀진 자와 만남" v={`${combatCount}회`} />
             <Row k="잔향에 처음 발 들인 날" v={formatCreatedAt(character.createdAt)} />
           </dl>
+        </Section>
+
+        <Section label={`기억의 조각 · ${ownedIds.length} / ${totalShardKinds}`}>
+          {ownedIds.length === 0 ? (
+            <p className="text-fg-dim text-xs italic leading-relaxed">
+              아직 어떤 조각도 너의 손에 잡히지 않았다.
+            </p>
+          ) : (
+            <ul className="space-y-3">
+              {ownedIds.map((id) => {
+                const meta = SHARD_META[id];
+                const count = shardCounts[id];
+                return (
+                  <li key={id} className="border-l-2 border-origin/40 pl-3">
+                    <div className="flex justify-between items-baseline">
+                      <p className="display-text text-origin text-sm">{meta.label}</p>
+                      {count > 1 && (
+                        <span className="text-fg-dim text-[0.65rem] tabular-nums">
+                          ×{count}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-fg-muted text-xs leading-relaxed mt-1">
+                      {meta.description}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </Section>
       </div>
 

@@ -11,6 +11,7 @@ import {
   resonanceBonusFor,
 } from '@/services/combatOutcome';
 import { getTier } from '@/services/resonanceTiers';
+import { rollShardDrop, shardForBoss } from '@/services/shards';
 import { haptic } from '@/utils/haptic';
 
 type Status = 'encounter' | 'idle' | 'narrating' | 'resolving';
@@ -148,6 +149,22 @@ export function CombatScreen() {
             ? 'tap'
             : 'soft',
       );
+
+      // victory 시 기억의 조각 드롭 판정 (v2.2 §18.2)
+      // 첫 클리어 100% / 이후 4%. addShard는 결말 화면이 lastShardGained로
+      // 알림 표시.
+      if (outcome === 'victory') {
+        const shardId = shardForBoss(enemy.name);
+        if (shardId !== null) {
+          const owned = useGame
+            .getState()
+            .shards.some((s) => s.id === shardId);
+          if (rollShardDrop(owned, Math.random())) {
+            useGame.getState().addShard(shardId);
+          }
+        }
+      }
+
       endCombat(outcome, newResonance + resonanceBonusFor(outcome));
       goTo('result');
       return;
