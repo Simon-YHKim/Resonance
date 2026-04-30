@@ -6,6 +6,10 @@ import { getTier } from '@/services/resonanceTiers';
 import { SHARD_META } from '@/services/shards';
 import { ANCHOR_META } from '@/services/anchors';
 import type { AnchorId } from '@/services/anchors';
+import {
+  formatMomentTime,
+  shortLineFor,
+} from '@/services/memoryMoments';
 import type { ShardId } from '@/types/game';
 
 const CATEGORY_LABEL: Record<'A' | 'B' | 'D' | 'H', string> = {
@@ -32,9 +36,12 @@ export function CharacterSheetScreen() {
   const combatCount = useGame((s) => s.combatCount);
   const shards = useGame((s) => s.shards);
   const anchorPoints = useGame((s) => s.anchorPoints);
+  const memoryMoments = useGame((s) => s.memoryMoments);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const tier = getTier(totalResonance);
+  // 시트 타임라인은 최근 6개만 (스크롤 부담 방지)
+  const recentMoments = memoryMoments.slice(0, 6);
 
   const shardCounts = shards.reduce<Record<string, number>>((acc, s) => {
     acc[s.id] = (acc[s.id] ?? 0) + 1;
@@ -183,6 +190,33 @@ export function CharacterSheetScreen() {
             </ul>
           )}
         </Section>
+
+        {recentMoments.length > 0 && (
+          <Section label={`기억 순간 · 최근 ${recentMoments.length} / ${memoryMoments.length}`}>
+            <ul className="space-y-3">
+              {recentMoments.map((m) => (
+                <li key={m.id} className="border-l-2 border-resonance/30 pl-3">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span className="text-fg-dim text-[0.6rem] tabular-nums tracking-wider">
+                      {formatMomentTime(m.ts)}
+                    </span>
+                    <span className="text-resonance/70 text-[0.6rem] tabular-nums">
+                      잔잔 {m.resonanceAt}
+                    </span>
+                  </div>
+                  <p className="text-fg-primary text-xs leading-relaxed display-text">
+                    {shortLineFor(m.outcome, m.bossName)}
+                  </p>
+                  {m.nickname !== character.nickname && (
+                    <p className="text-fg-dim text-[0.6rem] mt-1 italic">
+                      이전 이름 — {m.nickname}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
       </div>
 
       <div className="max-w-sm w-full mx-auto space-y-3">
