@@ -137,6 +137,17 @@ export function CombatScreen() {
     });
 
     if (outcome) {
+      // outcome별 햅틱 — 결말의 무게에 맞춰
+      // victory/defeat: firm 두 번 (무게)
+      // fled: tap (가벼운 도망)
+      // stalemate: soft (안개 잔잔)
+      haptic(
+        outcome === 'victory' || outcome === 'defeat'
+          ? 'firm'
+          : outcome === 'fled'
+            ? 'tap'
+            : 'soft',
+      );
       endCombat(outcome, newResonance + resonanceBonusFor(outcome));
       goTo('result');
       return;
