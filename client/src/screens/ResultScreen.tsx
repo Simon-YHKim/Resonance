@@ -37,6 +37,7 @@ export function ResultScreen() {
   const lastCombatGain = useGame((s) => s.lastCombatGain);
   const resonanceBeforeLastCombat = useGame((s) => s.resonanceBeforeLastCombat);
   const lastShardGained = useGame((s) => s.lastShardGained);
+  const vanishCount = useGame((s) => s.vanishCount);
   const lastCombatStats = useGame((s) => s.lastCombatStats);
   const character = useGame((s) => s.character);
   const goTo = useGame((s) => s.goTo);
@@ -111,6 +112,13 @@ export function ResultScreen() {
         <p className="text-fg-dim text-xs tracking-[0.3em] uppercase mb-3">기록</p>
         <h2 className="display-text text-2xl text-fg-primary mb-6">{c.title}</h2>
         <p className="text-fg-muted leading-relaxed display-text">{c.body}</p>
+
+        {/* defeat 시 사라짐 카운터 노출 — v2.0 §사망 시스템 */}
+        {lastOutcome === 'defeat' && vanishCount > 0 && (
+          <p className="text-danger/70 text-xs mt-3 italic tabular-nums tracking-wider">
+            {vanishCount}번째 사라짐 · 거리는 너를 또 한 번 잊지 않는다.
+          </p>
+        )}
 
         {categoryFooter && (
           <p className="text-fg-primary/90 leading-relaxed display-text mt-4 text-sm animate-fade-in">

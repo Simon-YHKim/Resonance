@@ -16,6 +16,8 @@ const initialState = {
   lastShardGained: null,
   anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
   memoryMoments: [],
+  lastCombatStats: null,
+  vanishCount: 0,
 };
 
 describe('gameStore', () => {
@@ -149,6 +151,28 @@ describe('gameStore', () => {
     useGame.getState().startCombat(combat);
     useGame.getState().endCombat('defeat', 5);
     expect(useGame.getState().combatCount).toBe(2);
+  });
+
+  it('endCombat increments vanishCount only on defeat', () => {
+    const combat: CombatState = {
+      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      enemy: { name: 'X', description: 'Y', encounter: 'Z', hp: 60, maxHp: 60 },
+      turn: 0,
+      resonance: 0,
+    };
+    expect(useGame.getState().vanishCount).toBe(0);
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('victory', 10);
+    expect(useGame.getState().vanishCount).toBe(0); // victory는 X
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('defeat', 0);
+    expect(useGame.getState().vanishCount).toBe(1);
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('fled', 0);
+    expect(useGame.getState().vanishCount).toBe(1); // fled는 X
+    useGame.getState().startCombat(combat);
+    useGame.getState().endCombat('defeat', 0);
+    expect(useGame.getState().vanishCount).toBe(2);
   });
 
   it('addShard appends and sets lastShardGained', () => {
