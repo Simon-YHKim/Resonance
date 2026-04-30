@@ -13,7 +13,7 @@ import type {
 import type { LLMService } from './LLMService';
 import { classifyByKeywords } from './mockData/nicknameCategoryRules';
 import { pickTemplate } from './mockData/characterTemplates';
-import { pickNarration } from './mockData/combatNarrations';
+import { pickNarration, pickEnemyResponse } from './mockData/combatNarrations';
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
@@ -60,16 +60,22 @@ export class MockLLMService implements LLMService {
 
     const hpRatio = state.enemy.hp / state.enemy.maxHp;
     const seed = (state.turn * 7 + action.length) >>> 0;
-    const text = pickNarration(action, hpRatio, seed);
+    const playerText = pickNarration(action, hpRatio, seed);
+    const enemyText = pickEnemyResponse(action, hpRatio, seed + 1);
 
-    for await (const ch of streamChars(text)) yield ch;
+    // 플레이어 행동 → 짧은 정지 → 적 반응 (한 stream으로 합쳐 흐름)
+    for await (const ch of streamChars(playerText)) yield ch;
+    yield '\n— ';
+    for await (const ch of streamChars(enemyText, 30)) yield ch;
 
-    // 액션별 수치 변화 (단순 결정론)
+    // 액션별 수치 변화 (단순 결정론). 적 공격 강화 — dialogue/flee도 적이
+    // 능동적으로 너에게 닿음 (사용자 의도: "상대방도 나를 공격하는").
     const result: CombatTurnResult = (() => {
       switch (action) {
         case 'attack':
           return {
-            narration: text,
+            narration: playerText,
+            enemyNarration: enemyText,
             playerHpDelta: -8 - Math.floor(Math.random() * 6),
             playerStaminaDelta: -15,
             enemyHpDelta: -22 - Math.floor(Math.random() * 8),
@@ -77,16 +83,18 @@ export class MockLLMService implements LLMService {
           };
         case 'dialogue':
           return {
-            narration: text,
+            narration: playerText,
+            enemyNarration: enemyText,
             playerHpDelta: -3,
             playerStaminaDelta: -5,
             enemyHpDelta: -14,
-            resonanceDelta: 5, // 깊이 있는 선택 → 잔잔 ↑↑
+            resonanceDelta: 5,
           };
         case 'flee':
           return {
-            narration: text,
-            playerHpDelta: 0,
+            narration: playerText,
+            enemyNarration: enemyText,
+            playerHpDelta: -2, // 도망 중에도 안개에 한 박자 닿음
             playerStaminaDelta: -25,
             enemyHpDelta: 0,
             resonanceDelta: 2,

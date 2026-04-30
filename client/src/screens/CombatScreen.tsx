@@ -197,10 +197,11 @@ export function CombatScreen() {
 
     if (!result) return;
 
-    // 도스 풍 전투 로그에 turn 묘사 추가 (turn 이전값 = combat.turn)
+    // 도스 풍 전투 로그 — turn마다 [너] / [잊혀진 자] 두 라인 분리
     const actionLabel =
       action === 'attack' ? '공격' : action === 'dialogue' ? '대화' : '도망';
-    appendCombatLog(`[${combat.turn + 1}턴 · ${actionLabel}] ${buf}`);
+    appendCombatLog(`[${combat.turn + 1}턴 · ${actionLabel}] ${result.narration}`);
+    appendCombatLog(`  ↳ ${result.enemyNarration}`);
 
     // tier 기반 액션 보정 — 누적 잔잔이 깊을수록 같은 액션이 더 큰 효과.
     // dialogue: tier별 잔잔 보너스 추가, attack: tier별 데미지 배율.
