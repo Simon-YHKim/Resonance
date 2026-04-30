@@ -4,6 +4,7 @@ import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
+import { crossedMilestone } from '@/services/milestones';
 import { haptic } from '@/utils/haptic';
 import { useCountUp } from '@/utils/useCountUp';
 import { useEffect } from 'react';
@@ -50,6 +51,12 @@ export function ResultScreen() {
   const tierBefore =
     resonanceBeforeLastCombat !== null ? getTier(resonanceBeforeLastCombat) : null;
   const tierPromoted = tierBefore !== null && tierBefore.tier !== tier.tier;
+
+  // 마일스톤 — tier 승급 없을 때만 표시 (중첩 방지)
+  const milestone =
+    !tierPromoted && resonanceBeforeLastCombat !== null
+      ? crossedMilestone(resonanceBeforeLastCombat, totalResonance)
+      : null;
 
   // tier 승급 시 햅틱 — 결말 화면 진입 직후 1회
   useEffect(() => {
@@ -105,6 +112,12 @@ export function ResultScreen() {
               잔향이 너를 다시 부른다 — 이제 너는 <strong>{tier.label}</strong>.
             </p>
           </div>
+        )}
+
+        {milestone && (
+          <p className="text-resonance/70 leading-relaxed display-text mt-4 text-xs animate-fade-in-slow">
+            ◦ {milestone.message}
+          </p>
         )}
 
         <div className="mt-12 border-t border-bg-elevated pt-6 space-y-2">
