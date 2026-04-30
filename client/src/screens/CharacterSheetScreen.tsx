@@ -235,8 +235,8 @@ export function CharacterSheetScreen() {
         <ActionButton variant="ghost" onClick={handleEnterCombat}>
           방구석에서 한 자리만
         </ActionButton>
-        <ActionButton variant="subtle" onClick={() => goTo('title')}>
-          ← 처음으로
+        <ActionButton variant="subtle" onClick={() => goTo('hearth')}>
+          ← 기억의 향로
         </ActionButton>
       </div>
     </div>

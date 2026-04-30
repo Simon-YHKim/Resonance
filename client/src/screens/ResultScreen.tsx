@@ -247,8 +247,8 @@ export function ResultScreen() {
           한 자리만 더 (방구석)
         </ActionButton>
         {character && (
-          <ActionButton variant="ghost" onClick={() => goTo('characterSheet')}>
-            나의 잔향
+          <ActionButton variant="ghost" onClick={() => goTo('hearth')}>
+            기억의 향로
           </ActionButton>
         )}
         <ActionButton variant="ghost" onClick={() => goTo('title')}>

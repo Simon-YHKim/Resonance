@@ -65,8 +65,8 @@ export function TitleScreen() {
       <div className="w-full max-w-sm space-y-3 animate-fade-in">
         {character ? (
           <>
-            <ActionButton onClick={() => goTo('characterSheet')}>
-              잔향의 자리로
+            <ActionButton onClick={() => goTo('hearth')}>
+              기억의 향로로
             </ActionButton>
             <ActionButton variant="ghost" onClick={() => goTo('nicknameInput')}>
               이름을 다시 부른다
