@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    /* eslint-disable-next-line no-console */
+    // console.error는 lint 룰 allow 목록에 포함됨
     console.error('[잔향 ErrorBoundary]', error, info.componentStack);
   }
 
