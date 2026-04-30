@@ -116,5 +116,6 @@ export type Screen =
   | 'map'
   | 'npc'
   | 'shop'
+  | 'bestiary'
   | 'combat'
   | 'result';

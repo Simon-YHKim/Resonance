@@ -19,6 +19,7 @@ const initialState = {
   lastCombatStats: null,
   vanishCount: 0,
   combatLog: [],
+  encounteredBosses: {},
 };
 
 describe('gameStore', () => {

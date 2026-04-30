@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import type { AnchorId } from '@/services/anchors';
 import type { CombatStats } from '@/services/contribution';
 import type { MemoryMoment } from '@/services/memoryMoments';
+import type { EncounteredInfo } from '@/services/bestiary';
+import { recordEncounter } from '@/services/bestiary';
 import type {
   CharacterSheet,
   CombatOutcome,
@@ -46,6 +48,9 @@ interface GameState {
   vanishCount: number;
   /** 현재 전투의 도스 풍 누적 로그 (turn 별 한 줄, startCombat 시 비움) */
   combatLog: string[];
+  /** 만남 기록 — bossName → EncounteredInfo (Bestiary).
+   *  처음 만나기 전엔 entry 없음 → ??? 마스킹. */
+  encounteredBosses: Record<string, EncounteredInfo>;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -64,6 +69,12 @@ interface GameState {
   setLastCombatStats: (stats: CombatStats) => void;
   /** 전투 로그 한 줄 추가 (도스 풍 누적). */
   appendCombatLog: (line: string) => void;
+  /** 만남 기록 — endCombat 시 자동 호출 (Bestiary 누적). */
+  recordBossEncounter: (
+    bossName: string,
+    observedMaxHp: number,
+    outcome: 'victory' | 'defeat' | 'fled' | 'stalemate',
+  ) => void;
   /** 기억의 시장 — 조각 N개 소비 (FIFO, 가장 오래된 것부터). */
   spendShards: (count: number) => void;
   /** 잔잔 즉시 가산 (시장 효과 등). */
@@ -92,6 +103,7 @@ export const useGame = create<GameState>()(
       lastCombatStats: null,
       vanishCount: 0,
       combatLog: [],
+      encounteredBosses: {},
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -136,6 +148,18 @@ export const useGame = create<GameState>()(
       setLastCombatStats: (stats) => set({ lastCombatStats: stats }),
       appendCombatLog: (line) =>
         set((s) => ({ combatLog: [...s.combatLog, line] })),
+      recordBossEncounter: (bossName, observedMaxHp, outcome) =>
+        set((s) => {
+          const next = recordEncounter(
+            s.encounteredBosses[bossName],
+            bossName,
+            observedMaxHp,
+            outcome,
+          );
+          return {
+            encounteredBosses: { ...s.encounteredBosses, [bossName]: next },
+          };
+        }),
       spendShards: (count) =>
         set((s) => ({ shards: s.shards.slice(count) })),
       addResonance: (delta) =>
@@ -159,6 +183,7 @@ export const useGame = create<GameState>()(
           lastCombatStats: null,
           vanishCount: 0,
           combatLog: [],
+          encounteredBosses: {},
         }),
     }),
     {
@@ -171,6 +196,7 @@ export const useGame = create<GameState>()(
         anchorPoints: s.anchorPoints,
         memoryMoments: s.memoryMoments,
         vanishCount: s.vanishCount,
+        encounteredBosses: s.encounteredBosses,
       }),
     },
   ),
