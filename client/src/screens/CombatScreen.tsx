@@ -34,6 +34,10 @@ export function CombatScreen() {
 
   const [status, setStatus] = useState<Status>('encounter');
   const [narration, setNarration] = useState('');
+  /* 매크로 — 한 전투 내 직전 액션 (Phase 0). 전투 종료 후 리셋.
+   * v2.2 §자유 매크로의 단순화: 한 키워드 액션 반복.
+   * Phase 1+ WoW식 다중 액션 시퀀스 + 사용자 정의 매크로명. */
+  const [lastAction, setLastAction] = useState<CombatAction | null>(null);
   const cancelRef = useRef(false);
 
   // 첫 조우 묘사 1회 재생
@@ -76,6 +80,9 @@ export function CombatScreen() {
   const handleAction = async (action: CombatAction, cost: number) => {
     if (status !== 'idle') return;
     if (player.stamina < cost) return;
+
+    // 매크로 보존 — 도망 외 액션만 (도망은 결말이라 반복 의미 없음)
+    if (action !== 'flee') setLastAction(action);
 
     // 액션별 햅틱 — 공격은 firm(중요), 대화는 soft, 도망은 tap
     haptic(action === 'attack' ? 'firm' : action === 'dialogue' ? 'soft' : 'tap');
@@ -236,6 +243,31 @@ export function CombatScreen() {
           </div>
         </div>
       </div>
+
+      {/* 매크로 — 직전 액션 1탭 반복 (도망 제외) */}
+      {lastAction && (() => {
+        const macro = ACTIONS.find((a) => a.key === lastAction);
+        if (!macro) return null;
+        const insufficient = player.stamina < macro.cost;
+        const disabled = status !== 'idle' || insufficient;
+        return (
+          <div className="max-w-sm w-full mx-auto mb-2">
+            <button
+              disabled={disabled}
+              onClick={() => handleAction(macro.key, macro.cost)}
+              className="w-full text-xs py-2 px-3 border border-resonance/30 text-resonance/80
+                         rounded-sm bg-bg-secondary/50
+                         enabled:hover:border-resonance/60 enabled:active:bg-bg-elevated
+                         disabled:opacity-30 disabled:cursor-not-allowed
+                         transition-colors flex justify-center items-center gap-2"
+            >
+              <span>↻</span>
+              <span className="display-text">{macro.label} 한 번 더</span>
+              <span className="text-fg-dim tabular-nums">−{macro.cost}</span>
+            </button>
+          </div>
+        );
+      })()}
 
       {/* 액션 버튼 */}
       <div className="max-w-sm w-full mx-auto grid grid-cols-3 gap-2">
