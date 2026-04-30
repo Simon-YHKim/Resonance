@@ -28,6 +28,7 @@ export default {
         'fade-in-slow': 'fadeIn 1200ms ease-out',
         'breathe': 'breathe 4s ease-in-out infinite',
         'pulse-resonance': 'pulseResonance 1800ms ease-out',
+        'damage-shake': 'damageShake 320ms ease-out',
       },
       keyframes: {
         fadeIn: {
@@ -37,6 +38,14 @@ export default {
         breathe: {
           '0%, 100%': { opacity: '0.4' },
           '50%': { opacity: '1' },
+        },
+        /* HP/스태미나 데미지 — 짧고 부드러운 셰이크 (잔향 톤 유지: 큰 진동 X). */
+        damageShake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%': { transform: 'translateX(-3px)' },
+          '40%': { transform: 'translateX(3px)' },
+          '60%': { transform: 'translateX(-2px)' },
+          '80%': { transform: 'translateX(2px)' },
         },
         /* tier 승급 — 라벤더 광량이 파동치며 사라짐 */
         pulseResonance: {

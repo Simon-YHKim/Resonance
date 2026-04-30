@@ -5,6 +5,7 @@ import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
 import { haptic } from '@/utils/haptic';
+import { useCountUp } from '@/utils/useCountUp';
 import { useEffect } from 'react';
 
 const COPY = {
@@ -54,6 +55,11 @@ export function ResultScreen() {
   useEffect(() => {
     if (tierPromoted) haptic('promotion');
   }, [tierPromoted]);
+
+  // 누적 잔잔 카운트 업 — 이전값에서 현재값으로 부드럽게 상승
+  const startCount =
+    resonanceBeforeLastCombat !== null ? resonanceBeforeLastCombat : totalResonance;
+  const displayedTotal = useCountUp(totalResonance, 900, startCount);
 
   if (!lastOutcome || !c) return null;
 
@@ -105,7 +111,7 @@ export function ResultScreen() {
           <div className="flex justify-between text-sm items-baseline">
             <span className="text-fg-muted">누적 잔잔</span>
             <span className="text-resonance display-text tabular-nums">
-              {totalResonance}
+              {displayedTotal}
               {lastCombatGain !== null && lastCombatGain !== 0 && (
                 <span
                   className={
