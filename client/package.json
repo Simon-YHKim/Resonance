@@ -10,6 +10,7 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint src",
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
     "cap:sync": "pnpm build && cap sync",
     "cap:android": "pnpm build && cap sync && cap open android",
     "android:debug": "pnpm build && cap sync android && cd android && ./gradlew assembleDebug"
@@ -27,6 +28,7 @@
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "2.1.8",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
