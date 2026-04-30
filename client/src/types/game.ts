@@ -86,6 +86,23 @@ export interface CombatTurnResult {
   resonanceDelta: number;
 }
 
+/** 기억의 조각 ID — 5체 보스 각각에 대응 (v2.2 §18.2 엘든링식 Remembrance) */
+export type ShardId =
+  | 'lost-bag'
+  | 'sealed-lips'
+  | 'pressed-shirt'
+  | 'half-smile'
+  | 'small-hand';
+
+/** 기억의 조각 — 보스 처치 시 드롭. 첫 클리어 100%, 이후 4%.
+ *  Phase 0는 컬렉션 의미만 (효과 없음). Phase 1+에서 1조각 = 스킬 1슬롯 흡수
+ *  (v2.2 §18.2). */
+export interface Shard {
+  id: ShardId;
+  /** 보스 처치 시각 (ms) */
+  acquiredAt: number;
+}
+
 /** 화면 상태 머신 — Phase 0 6개 화면 */
 export type Screen =
   | 'title'

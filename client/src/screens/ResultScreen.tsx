@@ -5,6 +5,7 @@ import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
 import { crossedMilestone } from '@/services/milestones';
+import { SHARD_META } from '@/services/shards';
 import { haptic } from '@/utils/haptic';
 import { useCountUp } from '@/utils/useCountUp';
 import { useEffect } from 'react';
@@ -33,9 +34,11 @@ export function ResultScreen() {
   const totalResonance = useGame((s) => s.totalResonance);
   const lastCombatGain = useGame((s) => s.lastCombatGain);
   const resonanceBeforeLastCombat = useGame((s) => s.resonanceBeforeLastCombat);
+  const lastShardGained = useGame((s) => s.lastShardGained);
   const character = useGame((s) => s.character);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
+  const shardMeta = lastShardGained ? SHARD_META[lastShardGained] : null;
 
   // 결말 없이 진입한 경우 보호
   useEffect(() => {
@@ -118,6 +121,18 @@ export function ResultScreen() {
           <p className="text-resonance/70 leading-relaxed display-text mt-4 text-xs animate-fade-in-slow">
             ◦ {milestone.message}
           </p>
+        )}
+
+        {shardMeta && (
+          <div className="mt-6 rounded-md px-4 py-3 border border-origin/40 bg-origin/5 animate-fade-in-slow">
+            <p className="text-fg-dim text-[0.6rem] tracking-[0.3em] uppercase mb-1">
+              기억의 조각
+            </p>
+            <p className="display-text text-origin text-sm mb-1">{shardMeta.label}</p>
+            <p className="text-fg-muted text-xs leading-relaxed">
+              {shardMeta.description}
+            </p>
+          </div>
         )}
 
         <div className="mt-12 border-t border-bg-elevated pt-6 space-y-2">

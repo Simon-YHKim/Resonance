@@ -5,6 +5,8 @@ import type {
   CombatOutcome,
   CombatState,
   Screen,
+  Shard,
+  ShardId,
 } from '@/types/game';
 
 interface GameState {
@@ -26,6 +28,10 @@ interface GameState {
   resonanceBeforeLastCombat: number | null;
   /** 누적 전투 횟수 (캐릭터 시트 만남 N회 표시용) */
   combatCount: number;
+  /** 보유 기억의 조각 (v2.2 §18.2) — 시간순 누적 */
+  shards: Shard[];
+  /** 직전 전투에서 새로 획득한 조각 (결말 화면 알림용, 1전투에 최대 1개) */
+  lastShardGained: ShardId | null;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -34,6 +40,8 @@ interface GameState {
   startCombat: (c: CombatState) => void;
   updateCombat: (patch: Partial<CombatState>) => void;
   endCombat: (outcome: CombatOutcome, resonanceGain: number) => void;
+  /** 조각 획득 — 같은 id 중복 허용 (4% 드롭 풀 활용 가능). */
+  addShard: (id: ShardId) => void;
   reset: () => void;
 }
 
@@ -49,6 +57,8 @@ export const useGame = create<GameState>()(
       lastCombatGain: null,
       resonanceBeforeLastCombat: null,
       combatCount: 0,
+      shards: [],
+      lastShardGained: null,
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -58,6 +68,7 @@ export const useGame = create<GameState>()(
           combat,
           lastOutcome: null,
           resonanceBeforeLastCombat: s.totalResonance,
+          lastShardGained: null,
         })),
       updateCombat: (patch) =>
         set((s) => (s.combat ? { combat: { ...s.combat, ...patch } } : s)),
@@ -69,6 +80,11 @@ export const useGame = create<GameState>()(
           combatCount: s.combatCount + 1,
           combat: null,
         })),
+      addShard: (id) =>
+        set((s) => ({
+          shards: [...s.shards, { id, acquiredAt: Date.now() }],
+          lastShardGained: id,
+        })),
       reset: () =>
         set({
           screen: 'title',
@@ -79,6 +95,8 @@ export const useGame = create<GameState>()(
           lastCombatGain: null,
           resonanceBeforeLastCombat: null,
           combatCount: 0,
+          shards: [],
+          lastShardGained: null,
         }),
     }),
     {
@@ -87,6 +105,7 @@ export const useGame = create<GameState>()(
         character: s.character,
         totalResonance: s.totalResonance,
         combatCount: s.combatCount,
+        shards: s.shards,
       }),
     },
   ),

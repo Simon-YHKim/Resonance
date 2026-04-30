@@ -12,6 +12,8 @@ const initialState = {
   lastCombatGain: null,
   resonanceBeforeLastCombat: null,
   combatCount: 0,
+  shards: [],
+  lastShardGained: null,
 };
 
 describe('gameStore', () => {
@@ -148,7 +150,49 @@ describe('gameStore', () => {
     expect(useGame.getState().combatCount).toBe(2);
   });
 
-  it('reset clears character/combat/outcome but not implementation', () => {
+  it('addShard appends and sets lastShardGained', () => {
+    useGame.getState().addShard('lost-bag');
+    expect(useGame.getState().shards).toHaveLength(1);
+    expect(useGame.getState().shards[0].id).toBe('lost-bag');
+    expect(useGame.getState().lastShardGained).toBe('lost-bag');
+
+    useGame.getState().addShard('sealed-lips');
+    expect(useGame.getState().shards).toHaveLength(2);
+    expect(useGame.getState().lastShardGained).toBe('sealed-lips');
+  });
+
+  it('addShard allows duplicates (4% drops accumulate)', () => {
+    useGame.getState().addShard('lost-bag');
+    useGame.getState().addShard('lost-bag');
+    expect(useGame.getState().shards).toHaveLength(2);
+    expect(useGame.getState().shards.every((s) => s.id === 'lost-bag')).toBe(true);
+  });
+
+  it('startCombat resets lastShardGained', () => {
+    useGame.getState().addShard('lost-bag');
+    expect(useGame.getState().lastShardGained).toBe('lost-bag');
+    const combat: CombatState = {
+      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      enemy: { name: 'X', description: 'Y', encounter: 'Z', hp: 60, maxHp: 60 },
+      turn: 0,
+      resonance: 0,
+    };
+    useGame.getState().startCombat(combat);
+    expect(useGame.getState().lastShardGained).toBeNull();
+    // 기존 조각은 유지
+    expect(useGame.getState().shards).toHaveLength(1);
+  });
+
+  it('reset clears shards too', () => {
+    useGame.getState().addShard('lost-bag');
+    useGame.setState({ totalResonance: 100 });
+    useGame.getState().reset();
+    const s = useGame.getState();
+    expect(s.shards).toHaveLength(0);
+    expect(s.lastShardGained).toBeNull();
+  });
+
+  it('reset preserves totalResonance (생애 누적 — 별개 동작 보장 X, 현재 동작 명세)', () => {
     useGame.setState({ totalResonance: 100 });
     useGame.getState().reset();
     const s = useGame.getState();
