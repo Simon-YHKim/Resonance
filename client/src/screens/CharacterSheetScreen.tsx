@@ -4,6 +4,8 @@ import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { SHARD_META } from '@/services/shards';
+import { ANCHOR_META } from '@/services/anchors';
+import type { AnchorId } from '@/services/anchors';
 import type { ShardId } from '@/types/game';
 
 const CATEGORY_LABEL: Record<'A' | 'B' | 'D' | 'H', string> = {
@@ -21,16 +23,19 @@ function formatCreatedAt(ts: number): string {
   return `${yy}년 ${mm}월 ${dd}일`;
 }
 
+const ANCHOR_ORDER: ReadonlyArray<AnchorId> = ['family', 'home', 'school', 'work'];
+const ANCHOR_BAR_MAX = 30;
+
 export function CharacterSheetScreen() {
   const character = useGame((s) => s.character);
   const totalResonance = useGame((s) => s.totalResonance);
   const combatCount = useGame((s) => s.combatCount);
   const shards = useGame((s) => s.shards);
+  const anchorPoints = useGame((s) => s.anchorPoints);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const tier = getTier(totalResonance);
 
-  // 같은 id 중복 보유는 카운트로 합치기 (5체 컬렉션 시각화)
   const shardCounts = shards.reduce<Record<string, number>>((acc, s) => {
     acc[s.id] = (acc[s.id] ?? 0) + 1;
     return acc;
@@ -108,6 +113,45 @@ export function CharacterSheetScreen() {
             <Row k="잊혀진 자와 만남" v={`${combatCount}회`} />
             <Row k="잔향에 처음 발 들인 날" v={formatCreatedAt(character.createdAt)} />
           </dl>
+        </Section>
+
+        <Section label="마음의 거점">
+          <ul className="space-y-2">
+            {ANCHOR_ORDER.map((id) => {
+              const meta = ANCHOR_META[id];
+              const value = Math.min(anchorPoints[id] ?? 0, ANCHOR_BAR_MAX);
+              const pct = (value / ANCHOR_BAR_MAX) * 100;
+              const linked = character.linkedKeywords.includes(meta.keyword);
+              return (
+                <li key={id} className="text-xs">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <span
+                      className={
+                        'display-text ' +
+                        (linked ? 'text-resonance' : 'text-fg-muted')
+                      }
+                    >
+                      {meta.label}
+                      {linked && <span className="ml-1 text-fg-dim">· {meta.keyword}</span>}
+                    </span>
+                    <span className="text-fg-dim tabular-nums">
+                      {anchorPoints[id] ?? 0}
+                      {(anchorPoints[id] ?? 0) >= ANCHOR_BAR_MAX && ' ✓'}
+                    </span>
+                  </div>
+                  <div className="h-1 bg-bg-elevated rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-[width] duration-500 ease-out ${linked ? 'bg-resonance/80' : 'bg-fg-dim/50'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <p className="text-fg-dim text-[0.65rem] italic mt-3 leading-relaxed">
+            대화 한 번 = 너의 키워드와 닿은 거점 +1.
+          </p>
         </Section>
 
         <Section label={`기억의 조각 · ${ownedIds.length} / ${totalShardKinds}`}>

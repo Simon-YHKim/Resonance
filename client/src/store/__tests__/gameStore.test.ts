@@ -14,6 +14,7 @@ const initialState = {
   combatCount: 0,
   shards: [],
   lastShardGained: null,
+  anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
 };
 
 describe('gameStore', () => {
@@ -85,7 +86,6 @@ describe('gameStore', () => {
     useGame.getState().updateCombat({ turn: 2, resonance: 5 });
     expect(useGame.getState().combat?.turn).toBe(2);
     expect(useGame.getState().combat?.resonance).toBe(5);
-    // 다른 필드 유지
     expect(useGame.getState().combat?.player.hp).toBe(100);
   });
 
@@ -179,20 +179,37 @@ describe('gameStore', () => {
     };
     useGame.getState().startCombat(combat);
     expect(useGame.getState().lastShardGained).toBeNull();
-    // 기존 조각은 유지
     expect(useGame.getState().shards).toHaveLength(1);
   });
 
-  it('reset clears shards too', () => {
+  it('addAnchorPoints increments specified anchors', () => {
+    useGame.getState().addAnchorPoints(['family']);
+    expect(useGame.getState().anchorPoints.family).toBe(1);
+    useGame.getState().addAnchorPoints(['family', 'school']);
+    expect(useGame.getState().anchorPoints.family).toBe(2);
+    expect(useGame.getState().anchorPoints.school).toBe(1);
+    expect(useGame.getState().anchorPoints.home).toBe(0);
+    expect(useGame.getState().anchorPoints.work).toBe(0);
+  });
+
+  it('addAnchorPoints with empty array is no-op', () => {
+    useGame.setState({ anchorPoints: { family: 5, home: 0, school: 0, work: 0 } });
+    useGame.getState().addAnchorPoints([]);
+    expect(useGame.getState().anchorPoints.family).toBe(5);
+  });
+
+  it('reset clears shards and anchorPoints', () => {
     useGame.getState().addShard('lost-bag');
+    useGame.setState({ anchorPoints: { family: 10, home: 5, school: 3, work: 1 } });
     useGame.setState({ totalResonance: 100 });
     useGame.getState().reset();
     const s = useGame.getState();
     expect(s.shards).toHaveLength(0);
     expect(s.lastShardGained).toBeNull();
+    expect(s.anchorPoints).toEqual({ family: 0, home: 0, school: 0, work: 0 });
   });
 
-  it('reset preserves totalResonance (생애 누적 — 별개 동작 보장 X, 현재 동작 명세)', () => {
+  it('reset preserves totalResonance (생애 누적 — 별개 동작 보장 X)', () => {
     useGame.setState({ totalResonance: 100 });
     useGame.getState().reset();
     const s = useGame.getState();
@@ -201,7 +218,6 @@ describe('gameStore', () => {
     expect(s.combat).toBeNull();
     expect(s.lastOutcome).toBeNull();
     expect(s.pendingNickname).toBeNull();
-    // totalResonance는 reset에서 보존 (생애 누적)
     expect(s.totalResonance).toBe(100);
   });
 });
