@@ -70,5 +70,29 @@ export default defineConfig({
     testTimeout: 30000,
     // Zustand persist 등 localStorage 접근에 필요.
     environment: 'jsdom',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'lcov'],
+      reportsDirectory: 'coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: [
+        'src/**/*.test.{ts,tsx}',
+        'src/**/__tests__/**',
+        'src/main.tsx',
+        // 디버그 도구 — 일반 사용자 노출 X, 테스트 의무 없음
+        'src/components/DebugPanel.tsx',
+        // 단순 wrapper / 타입 파일
+        'src/types/**',
+        'src/styles/**',
+      ],
+      // Phase 0 임계 — 도메인 로직(services·store)은 비교적 높게,
+      // 화면 컴포넌트는 RTL 도입 전이라 낮음. Phase 1+ 점진 인상.
+      thresholds: {
+        statements: 25,
+        branches: 60,
+        functions: 40,
+        lines: 25,
+      },
+    },
   },
 });
