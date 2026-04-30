@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActionButton } from '@/components/ActionButton';
 import { StatBar } from '@/components/StatBar';
 import { VoiceBubble } from '@/components/VoiceBubble';
+import { CombatLogPanel } from '@/components/CombatLogPanel';
 import { mockLLM } from '@/services/llm/MockLLMService';
 import { useGame } from '@/store/gameStore';
 import type { CombatAction, CombatTurnResult } from '@/types/game';
@@ -28,6 +29,8 @@ const ENCOUNTER_MS_PER_CHAR = 28;
 
 export function CombatScreen() {
   const combat = useGame((s) => s.combat);
+  const combatLog = useGame((s) => s.combatLog);
+  const appendCombatLog = useGame((s) => s.appendCombatLog);
   const updateCombat = useGame((s) => s.updateCombat);
   const endCombat = useGame((s) => s.endCombat);
   const goTo = useGame((s) => s.goTo);
@@ -42,10 +45,14 @@ export function CombatScreen() {
   /* 전투 통계 — 결말 시 종합 기여도 분류용 (v2.3 §22.3 Phase 0) */
   const statsRef = useRef({ attackCount: 0, dialogueCount: 0, fleeCount: 0 });
 
-  // 첫 조우 묘사 1회 재생
+  // 첫 조우 묘사 1회 재생 + 로그에 시작 라인 등록
   useEffect(() => {
     if (!combat) return;
     cancelRef.current = false;
+    // 첫 진입 시 로그 시작 (한 번만)
+    if (useGame.getState().combatLog.length === 0) {
+      appendCombatLog(`▸ ${combat.enemy.name}을(를) 조우했다.`);
+    }
     let i = 0;
     setNarration('');
     const text = combat.enemy.encounter;
@@ -111,6 +118,11 @@ export function CombatScreen() {
     }
 
     if (!result) return;
+
+    // 도스 풍 전투 로그에 turn 묘사 추가 (turn 이전값 = combat.turn)
+    const actionLabel =
+      action === 'attack' ? '공격' : action === 'dialogue' ? '대화' : '도망';
+    appendCombatLog(`[${combat.turn + 1}턴 · ${actionLabel}] ${buf}`);
 
     // tier 기반 액션 보정 — 누적 잔잔이 깊을수록 같은 액션이 더 큰 효과.
     // dialogue: tier별 잔잔 보너스 추가, attack: tier별 데미지 배율.
@@ -212,6 +224,17 @@ export function CombatScreen() {
         totalTurns: nextTurn,
       });
 
+      // 결말 라인 — 도스 풍 마지막 줄
+      const outcomeLabel =
+        outcome === 'victory'
+          ? '잊혀진 자가 무너졌다'
+          : outcome === 'defeat'
+            ? '너는 무릎을 꿇었다'
+            : outcome === 'fled'
+              ? '너는 거리를 떠났다'
+              : '거리가 너를 보내준다';
+      appendCombatLog(`◎ ${outcomeLabel}.`);
+
       endCombat(outcome, newResonance + resonanceBonusFor(outcome));
       goTo('result');
       return;
@@ -230,8 +253,8 @@ export function CombatScreen() {
           <StatBar label="잊혀진 자" value={enemy.hp} max={enemy.maxHp} color="hp" />
         </div>
 
-        {/* 내레이션 영역 */}
-        <div className="flex-1 my-4 min-h-[160px]">
+        {/* 내레이션 영역 — 현재 turn의 묘사 */}
+        <div className="my-3 min-h-[80px]">
           <VoiceBubble speaker={status === 'encounter' ? 'system' : 'voice'}>
             <span>
               {narration}
@@ -241,6 +264,11 @@ export function CombatScreen() {
             </span>
           </VoiceBubble>
         </div>
+
+        {/* 도스 풍 전투 로그 — 누적, 스크롤. v2.4 §28.2 텍스트 vs 매크로 */}
+        {combatLog.length > 0 && (
+          <CombatLogPanel log={combatLog} />
+        )}
 
         {/* 플레이어 상태 */}
         <div className="space-y-3 mb-6">
