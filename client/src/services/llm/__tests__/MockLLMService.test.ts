@@ -77,8 +77,11 @@ describe('MockLLMService.narrateCombat', () => {
       chars += step.value;
     }
     expect(chars.length).toBeGreaterThan(0);
-    expect(result?.narration).toBe(chars);
+    // 스트리밍은 player + 적 행동 합친 텍스트, result에는 분리 저장
+    expect(chars).toContain(result?.narration ?? '');
+    expect(chars).toContain(result?.enemyNarration ?? '');
     expect(result?.enemyHpDelta).toBeLessThan(0); // 공격이므로 적 HP 감소
+    expect(result?.enemyNarration?.length).toBeGreaterThan(0); // 적이 능동 행동
   });
 
   it('dialogue grants higher 잔잔 bonus than attack', async () => {

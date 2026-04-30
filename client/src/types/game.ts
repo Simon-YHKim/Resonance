@@ -76,8 +76,10 @@ export type CombatOutcome = 'victory' | 'defeat' | 'fled' | 'stalemate';
 
 /** 1턴 진행 결과 */
 export interface CombatTurnResult {
-  /** 목소리 또는 시스템의 내레이션 (스트리밍) */
+  /** 플레이어 행동 묘사 (스트리밍) */
   narration: string;
+  /** 적 능동 행동 묘사 — 같은 턴에 적이 움직임. v2.4 §28.2 */
+  enemyNarration: string;
   /** 플레이어/적 데미지 — 부호 있는 정수 */
   playerHpDelta: number;
   playerStaminaDelta: number;
