@@ -1,6 +1,7 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
+import { instantiateEnemy } from '@/services/enemyVariation';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
@@ -93,14 +94,15 @@ export function ResultScreen() {
 
   const handleAgain = () => {
     const archetype = pickForgetter(tier.tier, totalResonance);
+    const enemyInst = instantiateEnemy(archetype); // ±10% HP variance
     startCombat({
       player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
       enemy: {
-        name: archetype.name,
-        description: archetype.description,
-        encounter: withLocation(archetype.encounter, totalResonance),
-        hp: archetype.hp,
-        maxHp: archetype.hp,
+        name: enemyInst.name,
+        description: enemyInst.description,
+        encounter: withLocation(enemyInst.encounter, totalResonance),
+        hp: enemyInst.hp,
+        maxHp: enemyInst.maxHp,
       },
       turn: 0,
       resonance: 0,

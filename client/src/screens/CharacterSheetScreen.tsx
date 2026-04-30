@@ -1,6 +1,7 @@
 import { ActionButton } from '@/components/ActionButton';
 import { useGame } from '@/store/gameStore';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
+import { instantiateEnemy } from '@/services/enemyVariation';
 import { withLocation } from '@/services/llm/mockData/locations';
 import { getTier } from '@/services/resonanceTiers';
 import { SHARD_META } from '@/services/shards';
@@ -63,14 +64,17 @@ export function CharacterSheetScreen() {
 
   const handleEnterCombat = () => {
     const archetype = pickForgetter(tier.tier, totalResonance);
+    // 같은 이름이라도 매번 ±10% HP variance — 사용자 의도: "전투하다가
+    // 서서히 드러나게". 도감의 어림짐작과 실제가 살짝 다름.
+    const enemyInst = instantiateEnemy(archetype);
     startCombat({
       player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
       enemy: {
-        name: archetype.name,
-        description: archetype.description,
-        encounter: withLocation(archetype.encounter, totalResonance),
-        hp: archetype.hp,
-        maxHp: archetype.hp,
+        name: enemyInst.name,
+        description: enemyInst.description,
+        encounter: withLocation(enemyInst.encounter, totalResonance),
+        hp: enemyInst.hp,
+        maxHp: enemyInst.maxHp,
       },
       turn: 0,
       resonance: 0,
