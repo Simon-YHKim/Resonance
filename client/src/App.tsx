@@ -5,6 +5,7 @@ import { CharacterCreationScreen } from '@/screens/CharacterCreationScreen';
 import { CharacterSheetScreen } from '@/screens/CharacterSheetScreen';
 import { CombatScreen } from '@/screens/CombatScreen';
 import { ResultScreen } from '@/screens/ResultScreen';
+import { DebugPanel, isDebugMode } from '@/components/DebugPanel';
 import type { Screen } from '@/types/game';
 
 const SCREENS: Record<Screen, () => JSX.Element | null> = {
@@ -19,9 +20,13 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
 export function App() {
   const screen = useGame((s) => s.screen);
   const Current = SCREENS[screen];
+  const debug = isDebugMode();
   return (
-    <main className="h-full w-full max-w-md mx-auto" key={screen}>
-      <Current />
-    </main>
+    <>
+      <main className="h-full w-full max-w-md mx-auto" key={screen}>
+        <Current />
+      </main>
+      {debug && <DebugPanel />}
+    </>
   );
 }
