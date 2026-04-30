@@ -3,6 +3,7 @@ import { TitleScreen } from '@/screens/TitleScreen';
 import { NicknameInputScreen } from '@/screens/NicknameInputScreen';
 import { CharacterCreationScreen } from '@/screens/CharacterCreationScreen';
 import { CharacterSheetScreen } from '@/screens/CharacterSheetScreen';
+import { MapScreen } from '@/screens/MapScreen';
 import { CombatScreen } from '@/screens/CombatScreen';
 import { ResultScreen } from '@/screens/ResultScreen';
 import { DebugPanel, isDebugMode } from '@/components/DebugPanel';
@@ -13,6 +14,7 @@ const SCREENS: Record<Screen, () => JSX.Element | null> = {
   nicknameInput: NicknameInputScreen,
   characterCreation: CharacterCreationScreen,
   characterSheet: CharacterSheetScreen,
+  map: MapScreen,
   combat: CombatScreen,
   result: ResultScreen,
 };

@@ -103,11 +103,14 @@ export interface Shard {
   acquiredAt: number;
 }
 
-/** 화면 상태 머신 — Phase 0 6개 화면 */
+/** 화면 상태 머신 — Phase 0 7개 화면 (map은 거리 모드).
+ *  방구석 모드: title → nickname → creation → sheet → combat → result
+ *  거리 모드:   title → nickname → creation → sheet → map → combat → result */
 export type Screen =
   | 'title'
   | 'nicknameInput'
   | 'characterCreation'
   | 'characterSheet'
+  | 'map'
   | 'combat'
   | 'result';

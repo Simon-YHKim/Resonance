@@ -227,7 +227,10 @@ export function CharacterSheetScreen() {
       </div>
 
       <div className="max-w-sm w-full mx-auto space-y-3">
-        <ActionButton onClick={handleEnterCombat}>원의 자리로</ActionButton>
+        <ActionButton onClick={() => goTo('map')}>거리로 나선다</ActionButton>
+        <ActionButton variant="ghost" onClick={handleEnterCombat}>
+          방구석에서 한 자리만
+        </ActionButton>
         <ActionButton variant="subtle" onClick={() => goTo('title')}>
           ← 처음으로
         </ActionButton>
