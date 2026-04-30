@@ -38,6 +38,7 @@ export function CharacterSheetScreen() {
   const shards = useGame((s) => s.shards);
   const anchorPoints = useGame((s) => s.anchorPoints);
   const memoryMoments = useGame((s) => s.memoryMoments);
+  const vanishCount = useGame((s) => s.vanishCount);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const tier = getTier(totalResonance);
@@ -125,6 +126,9 @@ export function CharacterSheetScreen() {
           <dl className="space-y-1.5 text-xs">
             <Row k="이름의 분류" v={`${character.category} · ${CATEGORY_LABEL[character.category]}`} />
             <Row k="잊혀진 자와 만남" v={`${combatCount}회`} />
+            {vanishCount > 0 && (
+              <Row k="사라진 자국" v={`${vanishCount}번`} />
+            )}
             <Row k="잔향에 처음 발 들인 날" v={formatCreatedAt(character.createdAt)} />
           </dl>
         </Section>

@@ -41,6 +41,9 @@ interface GameState {
   memoryMoments: MemoryMoment[];
   /** 직전 전투 통계 — 결말 화면 종합 기여도 표시용 */
   lastCombatStats: CombatStats | null;
+  /** 사라짐(Vanishing) 누적 — defeat 시마다 +1 (v2.0 §사망 시스템).
+   *  Phase 0는 카운터만 (캐릭터 영구 사망 X). Phase 2+ 영구 사망. */
+  vanishCount: number;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -77,6 +80,7 @@ export const useGame = create<GameState>()(
       anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
       memoryMoments: [],
       lastCombatStats: null,
+      vanishCount: 0,
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -96,6 +100,8 @@ export const useGame = create<GameState>()(
           totalResonance: s.totalResonance + gain,
           lastCombatGain: gain,
           combatCount: s.combatCount + 1,
+          // defeat 시 사라짐 +1 (v2.0 §사망)
+          vanishCount: outcome === 'defeat' ? s.vanishCount + 1 : s.vanishCount,
           combat: null,
         })),
       addShard: (id) =>
@@ -131,6 +137,7 @@ export const useGame = create<GameState>()(
           anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
           memoryMoments: [],
           lastCombatStats: null,
+          vanishCount: 0,
         }),
     }),
     {
@@ -142,6 +149,7 @@ export const useGame = create<GameState>()(
         shards: s.shards,
         anchorPoints: s.anchorPoints,
         memoryMoments: s.memoryMoments,
+        vanishCount: s.vanishCount,
       }),
     },
   ),
