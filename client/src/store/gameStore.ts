@@ -64,6 +64,12 @@ interface GameState {
   setLastCombatStats: (stats: CombatStats) => void;
   /** 전투 로그 한 줄 추가 (도스 풍 누적). */
   appendCombatLog: (line: string) => void;
+  /** 기억의 시장 — 조각 N개 소비 (FIFO, 가장 오래된 것부터). */
+  spendShards: (count: number) => void;
+  /** 잔잔 즉시 가산 (시장 효과 등). */
+  addResonance: (delta: number) => void;
+  /** 사라짐 카운터 -1 (한 번의 침묵 효과). 0 미만으로 안 감. */
+  restoreOneVanish: () => void;
   reset: () => void;
 }
 
@@ -130,6 +136,12 @@ export const useGame = create<GameState>()(
       setLastCombatStats: (stats) => set({ lastCombatStats: stats }),
       appendCombatLog: (line) =>
         set((s) => ({ combatLog: [...s.combatLog, line] })),
+      spendShards: (count) =>
+        set((s) => ({ shards: s.shards.slice(count) })),
+      addResonance: (delta) =>
+        set((s) => ({ totalResonance: s.totalResonance + delta })),
+      restoreOneVanish: () =>
+        set((s) => ({ vanishCount: Math.max(0, s.vanishCount - 1) })),
       reset: () =>
         set({
           screen: 'title',

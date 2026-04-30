@@ -270,6 +270,34 @@ describe('gameStore', () => {
     expect(s.memoryMoments).toHaveLength(0);
   });
 
+  it('spendShards removes oldest shards (FIFO)', () => {
+    useGame.getState().addShard('lost-bag');
+    useGame.getState().addShard('sealed-lips');
+    useGame.getState().addShard('pressed-shirt');
+    expect(useGame.getState().shards).toHaveLength(3);
+    useGame.getState().spendShards(2);
+    expect(useGame.getState().shards).toHaveLength(1);
+    expect(useGame.getState().shards[0].id).toBe('pressed-shirt');
+  });
+
+  it('addResonance adds delta to totalResonance', () => {
+    useGame.setState({ totalResonance: 100 });
+    useGame.getState().addResonance(30);
+    expect(useGame.getState().totalResonance).toBe(130);
+    useGame.getState().addResonance(100);
+    expect(useGame.getState().totalResonance).toBe(230);
+  });
+
+  it('restoreOneVanish decrements vanishCount, clamped at 0', () => {
+    useGame.setState({ vanishCount: 2 });
+    useGame.getState().restoreOneVanish();
+    expect(useGame.getState().vanishCount).toBe(1);
+    useGame.getState().restoreOneVanish();
+    expect(useGame.getState().vanishCount).toBe(0);
+    useGame.getState().restoreOneVanish();
+    expect(useGame.getState().vanishCount).toBe(0); // 0 미만 X
+  });
+
   it('reset preserves totalResonance (생애 누적)', () => {
     useGame.setState({ totalResonance: 100 });
     useGame.getState().reset();
