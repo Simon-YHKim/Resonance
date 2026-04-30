@@ -37,6 +37,11 @@ export function CombatScreen() {
 
   const [status, setStatus] = useState<Status>('encounter');
   const [narration, setNarration] = useState('');
+  /* 자유 텍스트 입력 — Phase 0 placeholder (사용자 직접 묘사).
+   * Phase 1+ Anthropic Haiku/Gemini가 해석 → combat 효과 결정.
+   * Phase 0는 dialogue 처럼 처리 + 입력 텍스트가 그대로 narration. */
+  const [freeText, setFreeText] = useState('');
+  const FREE_TEXT_COST = 10;
   /* 매크로 — 한 전투 내 직전 액션 (Phase 0). 전투 종료 후 리셋.
    * v2.2 §자유 매크로의 단순화: 한 키워드 액션 반복.
    * Phase 1+ WoW식 다중 액션 시퀀스 + 사용자 정의 매크로명. */
@@ -85,6 +90,78 @@ export function CombatScreen() {
   }
 
   const { player, enemy, turn, resonance } = combat;
+
+  /* 자유 텍스트 묘사 — Phase 0 placeholder.
+   * Phase 1+: 입력을 LLM에 보내 → emotion + 액션 + 효과 추출.
+   * Phase 0: dialogue 처럼 처리 + 입력 텍스트를 narration으로. */
+  const handleFreeText = async () => {
+    const text = freeText.trim();
+    if (!text || status !== 'idle') return;
+    if (player.stamina < FREE_TEXT_COST) return;
+
+    haptic('soft');
+    setFreeText('');
+    setStatus('narrating');
+    // Phase 0: 입력 텍스트가 곧 narration. Phase 1+ LLM이 해석한 묘사로 교체.
+    const narrationText = `당신 — "${text}"`;
+    setNarration(narrationText);
+
+    // 통계는 dialogue로 카운트 (성찰형 액션)
+    statsRef.current.dialogueCount += 1;
+
+    // 도스 로그에 추가
+    appendCombatLog(`[${combat.turn + 1}턴 · 묘사] ${narrationText}`);
+
+    // Phase 0 mock 효과 — dialogue와 같은 잔잔 가산, HP 영향 없음
+    const tier = getTier(useGame.getState().totalResonance);
+    const dialogueBonus = tier.actionBuffs.dialogueResonanceBonus;
+    const ch = useGame.getState().character;
+    if (ch) {
+      const anchorIds = anchorsFor(ch.linkedKeywords);
+      if (anchorIds.length > 0) {
+        useGame.getState().addAnchorPoints(anchorIds);
+      }
+    }
+
+    const newPlayerStamina = Math.max(0, player.stamina - FREE_TEXT_COST);
+    const newResonance = resonance + 5 + dialogueBonus;
+    const nextTurn = turn + 1;
+
+    updateCombat({
+      player: { ...player, stamina: newPlayerStamina },
+      turn: nextTurn,
+      resonance: newResonance,
+    });
+
+    await new Promise((r) => setTimeout(r, 600));
+
+    const outcome = evaluateOutcome({
+      nextTurn,
+      playerHp: player.hp,
+      enemyHp: enemy.hp,
+      action: 'dialogue',
+    });
+
+    if (outcome) {
+      // (전체 결말 흐름은 handleAction과 동일 — 너무 길어 dialogue로 위임)
+      // 향후 LLM 통합 시 별도 분기. Phase 0는 turn 한도 도달 stalemate만 가능.
+      const outcomeLabel =
+        outcome === 'stalemate' ? '거리가 너를 보내준다' : '결말';
+      appendCombatLog(`◎ ${outcomeLabel}.`);
+
+      useGame.getState().setLastCombatStats({
+        attackCount: statsRef.current.attackCount,
+        dialogueCount: statsRef.current.dialogueCount,
+        fleeCount: statsRef.current.fleeCount,
+        totalTurns: nextTurn,
+      });
+      endCombat(outcome, newResonance + resonanceBonusFor(outcome));
+      goTo('result');
+      return;
+    }
+
+    setStatus('idle');
+  };
 
   const handleAction = async (action: CombatAction, cost: number) => {
     if (status !== 'idle') return;
@@ -284,6 +361,45 @@ export function CombatScreen() {
             <span>잔잔 +{resonance}</span>
           </div>
         </div>
+      </div>
+
+      {/* 자유 텍스트 — Phase 1+ LLM 통합 placeholder.
+          현재는 입력 텍스트가 narration으로 들어가고 dialogue처럼 처리. */}
+      <div className="max-w-sm w-full mx-auto mb-2">
+        <div className="flex gap-1">
+          <input
+            type="text"
+            value={freeText}
+            onChange={(e) => setFreeText(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleFreeText()}
+            placeholder="…직접 묘사한다"
+            disabled={status !== 'idle' || player.stamina < FREE_TEXT_COST}
+            maxLength={80}
+            className="flex-1 bg-bg-secondary/50 border border-bg-elevated rounded-sm
+                       px-3 py-2 text-xs text-fg-primary placeholder:text-fg-dim/70
+                       focus:border-resonance/50 focus:outline-none
+                       disabled:opacity-40
+                       transition-colors"
+          />
+          <button
+            onClick={handleFreeText}
+            disabled={
+              !freeText.trim() ||
+              status !== 'idle' ||
+              player.stamina < FREE_TEXT_COST
+            }
+            className="px-3 py-2 border border-resonance/40 rounded-sm
+                       text-resonance text-xs display-text
+                       enabled:hover:bg-resonance/10 enabled:active:scale-95
+                       disabled:opacity-30 disabled:cursor-not-allowed
+                       transition-all"
+          >
+            묘사 −{FREE_TEXT_COST}
+          </button>
+        </div>
+        <p className="text-fg-dim text-[0.6rem] mt-1 italic">
+          Phase 1+ LLM이 너의 묘사를 해석한다.
+        </p>
       </div>
 
       {/* 매크로 — 직전 액션 1탭 반복 (도망 제외) */}
