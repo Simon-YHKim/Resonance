@@ -18,6 +18,7 @@ const initialState = {
   memoryMoments: [],
   lastCombatStats: null,
   vanishCount: 0,
+  combatLog: [],
 };
 
 describe('gameStore', () => {

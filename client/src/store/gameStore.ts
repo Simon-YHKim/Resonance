@@ -44,6 +44,8 @@ interface GameState {
   /** 사라짐(Vanishing) 누적 — defeat 시마다 +1 (v2.0 §사망 시스템).
    *  Phase 0는 카운터만 (캐릭터 영구 사망 X). Phase 2+ 영구 사망. */
   vanishCount: number;
+  /** 현재 전투의 도스 풍 누적 로그 (turn 별 한 줄, startCombat 시 비움) */
+  combatLog: string[];
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -60,6 +62,8 @@ interface GameState {
   addMemoryMoment: (moment: MemoryMoment) => void;
   /** 결말 직전 호출 — 직전 전투 통계 기록 */
   setLastCombatStats: (stats: CombatStats) => void;
+  /** 전투 로그 한 줄 추가 (도스 풍 누적). */
+  appendCombatLog: (line: string) => void;
   reset: () => void;
 }
 
@@ -81,6 +85,7 @@ export const useGame = create<GameState>()(
       memoryMoments: [],
       lastCombatStats: null,
       vanishCount: 0,
+      combatLog: [],
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -91,6 +96,7 @@ export const useGame = create<GameState>()(
           lastOutcome: null,
           resonanceBeforeLastCombat: s.totalResonance,
           lastShardGained: null,
+          combatLog: [],
         })),
       updateCombat: (patch) =>
         set((s) => (s.combat ? { combat: { ...s.combat, ...patch } } : s)),
@@ -122,6 +128,8 @@ export const useGame = create<GameState>()(
           memoryMoments: [moment, ...s.memoryMoments].slice(0, 50),
         })),
       setLastCombatStats: (stats) => set({ lastCombatStats: stats }),
+      appendCombatLog: (line) =>
+        set((s) => ({ combatLog: [...s.combatLog, line] })),
       reset: () =>
         set({
           screen: 'title',
@@ -138,6 +146,7 @@ export const useGame = create<GameState>()(
           memoryMoments: [],
           lastCombatStats: null,
           vanishCount: 0,
+          combatLog: [],
         }),
     }),
     {
