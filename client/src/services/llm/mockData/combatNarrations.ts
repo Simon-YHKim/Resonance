@@ -1,5 +1,18 @@
-/* 잊혀진 자 1체 + 액션별 사전 생성 묘사 (v1.0 §1-4 패턴 #4)
- * Phase 0는 1종(어린 시절의 잊혀진 자) — Phase 2에서 5체로 확장. */
+/* 5체 보스 archetype + 액션별 사전 생성 묘사.
+ *
+ * v1.2 진실의 원천 (docs/01_CORE_DECISIONS/01_종합정리_v1.2_*.md) 보스 재정의:
+ *   잔잔 tier 진행에 따라 시간 역순 — 30~40대 → 5~7세.
+ *
+ *   #   변수                              이름            시간     장소        HP    모남:꿈자국
+ *   1   BOSS_LEFT_GIANT                  남겨진 거인     30~40대  강남         60    70:30
+ *   2   BOSS_FLOWING_SHADOW              흐르는 그림자   20대     한강         75    60:40
+ *   3   BOSS_PROCRASTINATING_SCHOLAR     미루는 학자     17~19세  종로         95    30:70  (꿈자국 메인)
+ *   4   BOSS_DEPARTED_FRIENDS            떠난 친구들     8~12세   동네 골목   110    65:35
+ *   5   BOSS_CHILD_OF_ORIGIN             원의 아이       5~7세    회색 운동장 130    50:50
+ *
+ * 모남 = 사회에 맞춰지며 잘려나간 자기 ("한때 그게 너였어")
+ * 꿈자국 = 한 번도 되어보지 못한 자기 ("한때 그게 너였을 수도 있었어")
+ * 두 결의 비중 분리는 #65에서 메커니즘에 반영. 이 파일은 정체성·외형·시드만. */
 
 import type { CombatAction } from '@/types/game';
 
@@ -11,77 +24,91 @@ export interface EnemyArchetype {
   hp: number;
   /** 배경 스토리 — Bestiary 항상 노출 (만나기 전에도). v2.3 §28.2 */
   background: string;
+  /** 시간대 — '30~40대' 같이 자유 텍스트. 도감/연표용 */
+  era?: string;
+  /** 등장 장소 — '강남' '한강' 같이. 거리 모드 컨텍스트용 */
+  place?: string;
 }
 
-export const FORGETTER_OF_CHILDHOOD: EnemyArchetype = {
-  name: '잊혀진 자 — 어린 시절의 잔해',
+export const BOSS_LEFT_GIANT: EnemyArchetype = {
+  name: '잊혀진 자 — 남겨진 거인',
+  era: '30~40대',
+  place: '강남',
   description:
-    '한쪽 무릎이 꺾인 채 천천히 다가온다. 얼굴은 안개에 가려 보이지 않는다. 손에 든 것은… 작은 가방이었던 것 같다.',
+    '깊게 다려진 정장. 어깨가 한쪽으로 굳어 있다. 손에는 누구에게도 건네지 못한 명함이 한 묶음 쥐여 있다.',
   encounter:
-    '거리의 끝에서 익숙한 그림자가 일어선다. 목소리가 속삭인다 — "저 자는 너의 어떤 부분을 잊은 자다."',
+    '강남의 거리 끝에서 너와 같은 키의 한 사람이 일어선다. 목소리가 속삭인다 — "저 자는, 너가 정 들이려 했던 자리에 결국 닿지 못한 자다."',
   hp: 60,
   background:
-    '한 거리에서 처음 너의 이름이 어디론가 흘러갔을 때, 거기 남은 그림자가 이 자다. 너는 그 그림자가 너를 따라온 줄도 모른 채 자랐다. 그리고 어느 날, 거리의 끝에서 그 그림자가 너를 기다리고 있었다.',
+    '회의실의 빈 자리들 사이에서, 너는 동료에게 정 들이려 했다. 그러나 진짜로 함께 일하고 싶었던 자리는 — 끝내 너의 자리가 되지 못했다. 못 건넨 명함과 굳은 어깨, 한 박자 늦은 인사가 모여 한 거인의 윤곽을 만든다. 그 거인이 강남의 거리 끝에 너를 기다리고 있다.',
 };
 
-/** 청소년기의 잊혀진 자 — 잔잔 echo tier 이상에서 등장. 더 단단한 무게감. */
-export const FORGETTER_OF_ADOLESCENCE: EnemyArchetype = {
-  name: '잊혀진 자 — 청소년의 침묵',
+/** 흐르는 그림자 — 잔잔 echo tier 이상. 한강의 그림자, 못 부른 이름. */
+export const BOSS_FLOWING_SHADOW: EnemyArchetype = {
+  name: '잊혀진 자 — 흐르는 그림자',
+  era: '20대',
+  place: '한강',
   description:
-    '교복 칼라가 살짝 들려 있다. 입술은 굳게 닫혀 있고, 어깨는 어디에도 기대지 않는다.',
+    '강물에 비친 듯 윤곽이 흐려 있다. 입은 무언가를 부르려다 매번 한 박자 늦는다. 어깨선이 강물의 결을 따라 천천히 흐른다.',
   encounter:
-    '거리의 끝에서 너의 한 시절이 너를 정면으로 본다. 목소리가 속삭인다 — "저 자는 침묵으로 너를 가르친 자다."',
+    '한강의 끝에서 너의 한 시절이 강물에 비친 채 일어선다. 목소리가 속삭인다 — "저 자는, 네가 더 표현했더라면 — 의 자리에 남은 자다."',
   hp: 75,
   background:
-    '어느 시기, 너는 한 마디도 하지 못한 자리에 한 박자 너무 오래 앉아 있었다. 그 자리에 묵힌 침묵이 옷이 되고, 어깨가 되고, 한 사람의 윤곽이 되었다. 그것이 이 자다.',
+    '20대의 어느 강가에서, 너는 깊이 사랑하려 했다. 그러나 그 마음의 한 줄을 너는 제때 꺼내지 못했다. 강물에 비치다 사라진 윤곽들 — 못 부른 이름, 못 건넨 손, 그때의 한 박자 — 이 모여 한 그림자를 만든다. 그 그림자가 한강에 너를 기다리고 있다.',
 };
 
-/** 성인기의 잊혀진 자 — 잔잔 resonant tier(150~399)에서 등장. 가장 무거운 무게. */
-export const FORGETTER_OF_ADULTHOOD: EnemyArchetype = {
-  name: '잊혀진 자 — 어른의 가면',
+/** 미루는 학자 — 잔잔 resonant tier(150~399). 종로 서점가. 꿈자국 메인 (70%). */
+export const BOSS_PROCRASTINATING_SCHOLAR: EnemyArchetype = {
+  name: '잊혀진 자 — 미루는 학자',
+  era: '17~19세',
+  place: '종로',
   description:
-    '잘 다려진 셔츠. 그러나 옷깃 안쪽에 작은 얼룩이 굳어 있다. 시선은 어디에도 정확히 맺히지 않는다.',
+    '교복 위에 헐거운 외투. 한쪽 손에는 펼쳐두고 끝내 덮어버린 책. 시선은 다음 페이지로 넘어가지 않은 자리에 머물러 있다.',
   encounter:
-    '거리의 끝에서 너의 한 시기가 손을 내밀어 인사한다. 목소리가 속삭인다 — "저 자는 너의 가면을 너보다 먼저 익힌 자다."',
+    '종로 서점가의 끝에서 너의 한 시절이 책을 들고 일어선다. 목소리가 속삭인다 — "저 자는, 네가 진짜 되고 싶었던 무엇 — 의 자리에 남은 자다."',
   hp: 95,
   background:
-    '너는 다려진 셔츠를 입고 한 사람의 자리에 앉아 본 적이 있다. 그 자리에 너의 눈빛이 잠시 어디에도 닿지 않았다. 그 어디에도 닿지 않은 눈빛이 모여 한 사람을 만들었다. 그 사람이 이 자다.',
+    '17~19세 어느 책상에서, 너는 답을 찾으려 했다. 그러나 그것보다 먼저, 너는 진짜 되고 싶었던 무엇이 있었다. 그 무엇은 다음으로 미뤄졌고, 또 다음으로 미뤄졌다. 미뤄둔 페이지마다 한 자국씩 쌓여 한 학자의 윤곽이 되었다. 그 학자가 종로의 끝에 너를 기다리고 있다.',
 };
 
-/** 청년기의 거짓말 — 잔잔 origin entry(400~999)에서 등장. 4체.
- *  v2.3 §28.2 5체 완성 — origin tier 진입 후 첫 보스. */
-export const FORGETTER_OF_LATE_ADULT: EnemyArchetype = {
-  name: '잊혀진 자 — 청년의 거짓말',
+/** 떠난 친구들 — 잔잔 origin entry(400~999). 4체.
+ *  2/3 변곡점 — 처치 시 우세 축이 결정 (#66·#68). */
+export const BOSS_DEPARTED_FRIENDS: EnemyArchetype = {
+  name: '잊혀진 자 — 떠난 친구들',
+  era: '8~12세',
+  place: '동네 골목',
   description:
-    '너와 같은 키, 같은 자세. 입가에 한쪽만 올라간 미소가 굳어 있다. 손에는 너에게 했던 변명들이 한 묶음 쥐여 있다.',
+    '여럿의 그림자가 한 윤곽으로 겹쳐 있다. 손은 흔들다 만 자리에 굳어 있고, 다른 손은 너에게 매달리다 놓친 결을 갖고 있다.',
   encounter:
-    '거리의 끝에서 너의 한 시절이 너에게 변명을 건넨다. 목소리가 속삭인다 — "저 자는 네가 네 자신에게 한 거짓말로 만들어진 자다."',
+    '동네 골목의 끝에서 어린 그림자들이 한 사람으로 모인다. 목소리가 속삭인다 — "저 자는, 네가 매달렸던 손과 — 더 친해지고 싶었던 손이 같이 만든 자다."',
   hp: 110,
   background:
-    '너는 너 자신에게 한 마디씩 거짓말을 했다. 어느 날엔 그것이 위로였고, 어느 날엔 도망이었다. 그 거짓말 한 줄 한 줄이 모여 너와 같은 키, 같은 자세의 사람을 만들었다. 그 사람이 이 자다.',
+    '8~12세의 어느 골목에서, 너는 친구의 옷자락에 매달렸다. 어느 골목에서는, 더 친해지고 싶었던 다른 손이 너에게서 멀어졌다. 매달림과 멀어짐 — 그 두 박자가 한 골목에 한 사람의 윤곽을 만든다. 그 윤곽이 동네 골목 끝에 너를 기다리고 있다.',
 };
 
-/** 어린 자신 — 잔잔 origin deeper(1000+)에서 등장. 5체 최종.
- *  Phase 0는 단일 페이즈 archetype. Phase 2+에서 3페이즈 시스템으로 확장
- *  (숨바꼭질 → 떼쓰기 → 마지막 부탁 — v2.3 §28.2). */
-export const FORGETTER_OF_INNER_CHILD: EnemyArchetype = {
-  name: '잊혀진 자 — 어린 너',
+/** 원의 아이 — 잔잔 origin deeper(1000+). 5체 최종.
+ *  모든 모남의 총합 + 모든 꿈자국의 총합. 회색 운동장 한가운데.
+ *  Phase 0는 단일 페이즈. Phase 2+에서 3페이즈 (숨바꼭질→떼쓰기→마지막 부탁). */
+export const BOSS_CHILD_OF_ORIGIN: EnemyArchetype = {
+  name: '잊혀진 자 — 원의 아이',
+  era: '5~7세',
+  place: '회색 운동장',
   description:
-    '너의 무릎까지 오는 키. 한쪽 양말이 흘러내려 있다. 너를 올려다보는 눈이 너무 작아서, 너는 한참 만에야 그것이 너 자신이라는 것을 안다.',
+    '너의 무릎까지 오는 키. 한쪽 양말이 흘러내려 있다. 너를 올려다보는 눈이 너무 작아서, 너는 한참 만에야 그것이 너의 가장 처음 자리에 있던 너 자신이라는 것을 안다.',
   encounter:
-    '거리의 끝에서 작은 손 하나가 너를 부른다. 목소리가 속삭인다 — "저 자는 네가 가장 처음 잊은 자다. 그리고 가장 늦게까지 너를 기다린 자다."',
+    '회색 운동장 한가운데, 작은 손 하나가 너를 부른다. 목소리가 속삭인다 — "저 자는, 네가 가장 처음 잊은 자다. 그리고 가장 늦게까지 너를 기다린 자다."',
   hp: 130,
   background:
-    '너의 가장 처음 자리에는 한 작은 사람이 있었다. 너는 그 사람을 두고 자랐다. 그 사람은 너의 자리에서 사라지지 않고, 거리에 한 박자 늦게 따라왔다. 너의 잔향이 가장 깊은 자리에 닿을 때, 그 사람은 너의 손에 닿을 만큼 가까워진다.',
+    '5~7세의 회색 운동장 한가운데, 한 작은 사람이 너를 두고 남았다. 너는 그 사람을 두고 자랐다. 너에게서 잘려나간 모든 모남과 — 너가 한 번도 되어보지 못한 모든 꿈자국이 — 그 작은 사람의 손에 모두 모여 있다. 너의 잔향이 가장 깊은 자리에 닿을 때, 그 손은 너의 손에 닿을 만큼 가까워진다.',
 };
 
-/** Bestiary 카탈로그 — 만남 추적용 모든 5 archetype 목록 */
+/** Bestiary 카탈로그 — 만남 추적용 모든 5 archetype 목록 (시간 역순). */
 export const ALL_ARCHETYPES: ReadonlyArray<EnemyArchetype> = [
-  FORGETTER_OF_CHILDHOOD,
-  FORGETTER_OF_ADOLESCENCE,
-  FORGETTER_OF_ADULTHOOD,
-  FORGETTER_OF_LATE_ADULT,
-  FORGETTER_OF_INNER_CHILD,
+  BOSS_LEFT_GIANT,
+  BOSS_FLOWING_SHADOW,
+  BOSS_PROCRASTINATING_SCHOLAR,
+  BOSS_DEPARTED_FRIENDS,
+  BOSS_CHILD_OF_ORIGIN,
 ];
 
 /** 이름으로 archetype 조회 (Bestiary 매핑용). 매칭 없으면 null. */
@@ -91,31 +118,31 @@ export function archetypeByName(name: string): EnemyArchetype | null {
 
 /** 잊혀진 자 선택 — 누적 잔잔에 따라 5체 분기.
  *
- *    잔잔        보스                       HP    체
- *  --------      -----                      ----  --
- *      0~  49    어린 시절의 잔해           60     1
- *     50~ 149    청소년의 침묵              75     2
- *    150~ 399    어른의 가면                95     3
- *    400~ 999    청년의 거짓말             110     4
- *   1000+        어린 너 (5~7세, 최종)     130     5
+ *    잔잔        보스                  시간       장소         HP   체
+ *  --------      -----                 ------     -------     ----  --
+ *      0~  49    남겨진 거인           30~40대    강남         60    1
+ *     50~ 149    흐르는 그림자         20대       한강         75    2
+ *    150~ 399    미루는 학자           17~19세    종로         95    3
+ *    400~ 999    떠난 친구들           8~12세     동네 골목   110    4  (2/3 변곡점)
+ *   1000+        원의 아이             5~7세      회색 운동장 130    5  (최종)
  *
- *  Phase 0는 5체 모두 단일 페이즈. v2.3 §28.2의 어린 자신 3-페이즈
- *  시스템(숨바꼭질→떼쓰기→마지막 부탁)은 Phase 2+에서 도입. */
+ *  Phase 0는 5체 모두 단일 페이즈. Phase 2+에서 원의 아이는 3페이즈
+ *  (숨바꼭질→떼쓰기→마지막 부탁)으로 확장. */
 export function pickForgetter(
   tier: 'novice' | 'echo' | 'resonant' | 'origin',
   totalResonance: number = 0,
 ): EnemyArchetype {
   switch (tier) {
     case 'novice':
-      return FORGETTER_OF_CHILDHOOD;
+      return BOSS_LEFT_GIANT;
     case 'echo':
-      return FORGETTER_OF_ADOLESCENCE;
+      return BOSS_FLOWING_SHADOW;
     case 'resonant':
-      return FORGETTER_OF_ADULTHOOD;
+      return BOSS_PROCRASTINATING_SCHOLAR;
     case 'origin':
       return totalResonance >= 1000
-        ? FORGETTER_OF_INNER_CHILD
-        : FORGETTER_OF_LATE_ADULT;
+        ? BOSS_CHILD_OF_ORIGIN
+        : BOSS_DEPARTED_FRIENDS;
   }
 }
 

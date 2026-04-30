@@ -88,13 +88,14 @@ export interface CombatTurnResult {
   resonanceDelta: number;
 }
 
-/** 기억의 조각 ID — 5체 보스 각각에 대응 (v2.2 §18.2 엘든링식 Remembrance) */
+/** 기억의 조각 ID — 5체 보스 각각에 대응 (v2.2 §18.2 엘든링식 Remembrance).
+ *  v1.2 보스 재정의 (남겨진 거인 / 흐르는 그림자 / 미루는 학자 / 떠난 친구들 / 원의 아이). */
 export type ShardId =
-  | 'lost-bag'
-  | 'sealed-lips'
-  | 'pressed-shirt'
-  | 'half-smile'
-  | 'small-hand';
+  | 'shed-namecard'
+  | 'river-glance'
+  | 'folded-page'
+  | 'half-wave'
+  | 'first-step';
 
 /** 기억의 조각 — 보스 처치 시 드롭. 첫 클리어 100%, 이후 4%.
  *  Phase 0는 컬렉션 의미만 (효과 없음). Phase 1+에서 1조각 = 스킬 1슬롯 흡수

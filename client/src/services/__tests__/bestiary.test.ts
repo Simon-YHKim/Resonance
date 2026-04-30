@@ -3,8 +3,8 @@ import { recordEncounter } from '../bestiary';
 
 describe('recordEncounter', () => {
   it('creates new entry on first encounter', () => {
-    const e = recordEncounter(undefined, '잊혀진 자 — 어린 시절의 잔해', 60, 'victory');
-    expect(e.bossName).toBe('잊혀진 자 — 어린 시절의 잔해');
+    const e = recordEncounter(undefined, '잊혀진 자 — 남겨진 거인', 60, 'victory');
+    expect(e.bossName).toBe('잊혀진 자 — 남겨진 거인');
     expect(e.encounterCount).toBe(1);
     expect(e.lastObservedMaxHp).toBe(60);
     expect(e.lastOutcome).toBe('victory');

@@ -5,42 +5,42 @@ import {
   shortLineFor,
 } from '../memoryMoments';
 
-describe('shortLineFor — boss-specific (victory)', () => {
-  it('어린 너 victory has 작은 손 motif', () => {
-    expect(shortLineFor('victory', '잊혀진 자 — 어린 너')).toContain('작은 손');
+describe('shortLineFor — boss-specific (victory) — v1.2', () => {
+  it('원의 아이 victory has 작은 손 motif', () => {
+    expect(shortLineFor('victory', '잊혀진 자 — 원의 아이')).toContain('작은 손');
   });
 
-  it('청년의 거짓말 victory has 미소 motif', () => {
-    expect(shortLineFor('victory', '잊혀진 자 — 청년의 거짓말')).toContain('미소');
+  it('떠난 친구들 victory has 흔들 motif', () => {
+    expect(shortLineFor('victory', '잊혀진 자 — 떠난 친구들')).toContain('흔들');
   });
 
-  it('어른의 가면 victory has 셔츠/얼룩 motif', () => {
-    expect(shortLineFor('victory', '잊혀진 자 — 어른의 가면')).toMatch(/셔츠|얼룩/);
+  it('미루는 학자 victory has 페이지 motif', () => {
+    expect(shortLineFor('victory', '잊혀진 자 — 미루는 학자')).toMatch(/페이지|줄/);
   });
 
-  it('청소년의 침묵 victory has 입술 motif', () => {
-    expect(shortLineFor('victory', '잊혀진 자 — 청소년의 침묵')).toContain('입술');
+  it('흐르는 그림자 victory has 강물 motif', () => {
+    expect(shortLineFor('victory', '잊혀진 자 — 흐르는 그림자')).toContain('강물');
   });
 
-  it('어린 시절의 잔해 victory has 가방 motif', () => {
-    expect(shortLineFor('victory', '잊혀진 자 — 어린 시절의 잔해')).toContain('가방');
+  it('남겨진 거인 victory has 명함 motif', () => {
+    expect(shortLineFor('victory', '잊혀진 자 — 남겨진 거인')).toContain('명함');
   });
 });
 
 describe('shortLineFor — non-victory outcomes', () => {
   it('defeat returns common line regardless of boss', () => {
-    const a = shortLineFor('defeat', '잊혀진 자 — 어린 너');
-    const b = shortLineFor('defeat', '잊혀진 자 — 어른의 가면');
+    const a = shortLineFor('defeat', '잊혀진 자 — 원의 아이');
+    const b = shortLineFor('defeat', '잊혀진 자 — 미루는 학자');
     expect(a).toBe(b);
     expect(a).toContain('받아내지');
   });
 
   it('fled returns 도망 motif', () => {
-    expect(shortLineFor('fled', '잊혀진 자 — 어린 너')).toContain('도망');
+    expect(shortLineFor('fled', '잊혀진 자 — 원의 아이')).toContain('도망');
   });
 
   it('stalemate returns 안개 motif', () => {
-    expect(shortLineFor('stalemate', '잊혀진 자 — 어른의 가면')).toContain('안개');
+    expect(shortLineFor('stalemate', '잊혀진 자 — 미루는 학자')).toContain('안개');
   });
 });
 
@@ -48,10 +48,10 @@ describe('shortLineFor — D safety (no self-harm direct depiction)', () => {
   it('all returned lines avoid self-harm direct vocabulary', () => {
     const forbidden = ['자살', '자해', '죽었', '베었', '뛰어내'];
     const cases: Array<['victory' | 'defeat' | 'fled' | 'stalemate', string]> = [
-      ['victory', '잊혀진 자 — 어린 너'],
-      ['defeat', '잊혀진 자 — 어른의 가면'],
-      ['fled', '잊혀진 자 — 어린 시절의 잔해'],
-      ['stalemate', '잊혀진 자 — 청소년의 침묵'],
+      ['victory', '잊혀진 자 — 원의 아이'],
+      ['defeat', '잊혀진 자 — 미루는 학자'],
+      ['fled', '잊혀진 자 — 남겨진 거인'],
+      ['stalemate', '잊혀진 자 — 흐르는 그림자'],
     ];
     for (const [outcome, boss] of cases) {
       const line = shortLineFor(outcome, boss);

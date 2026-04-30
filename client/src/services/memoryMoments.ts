@@ -30,33 +30,33 @@ interface MomentLineRule {
 }
 
 /* outcome × boss 매트릭스로 짧은 한 줄. 가장 구체적인 룰부터 매칭.
- * 어린 너(5체) victory는 가장 깊은 결의. */
+ * 원의 아이(5체) victory는 가장 깊은 결의. v1.2 5체 보스 시드. */
 const LINE_RULES: ReadonlyArray<MomentLineRule> = [
-  /* victory — 보스별 특화 */
+  /* victory — 보스별 특화 (v1.2) */
   {
     outcome: 'victory',
-    bossKeyword: '어린 너',
-    line: '작은 손이 너의 손을 잠시 잡았다 놓았다.',
+    bossKeyword: '원의 아이',
+    line: '회색 운동장 한가운데, 작은 손이 너의 손을 잠시 잡았다 놓았다.',
   },
   {
     outcome: 'victory',
-    bossKeyword: '청년의 거짓말',
-    line: '한쪽만 올라갔던 미소가 결국 양쪽으로 풀렸다.',
+    bossKeyword: '떠난 친구들',
+    line: '흔들다 만 손이 마침내 한 번, 끝까지 흔들렸다.',
   },
   {
     outcome: 'victory',
-    bossKeyword: '어른의 가면',
-    line: '셔츠 옷깃의 얼룩이 한 번 더 옅어진 것을 너는 보았다.',
+    bossKeyword: '미루는 학자',
+    line: '미뤄둔 페이지의 한 줄을, 너는 처음으로 끝까지 읽었다.',
   },
   {
     outcome: 'victory',
-    bossKeyword: '청소년의 침묵',
-    line: '굳어 있던 입술이 잠시, 한 박자만큼 벌어졌다.',
+    bossKeyword: '흐르는 그림자',
+    line: '강물에 비치다 사라진 그 이름을, 너는 한 박자 먼저 부르려 했다.',
   },
   {
     outcome: 'victory',
-    bossKeyword: '어린 시절',
-    line: '작은 가방이 잠깐, 너의 어깨 위에 다시 얹혔다.',
+    bossKeyword: '남겨진 거인',
+    line: '못 건넨 명함이 잠깐, 너의 손에 다시 머물렀다.',
   },
   /* defeat — 모든 보스 공통 */
   {

@@ -10,14 +10,14 @@
 import type { CombatState } from '@/types/game';
 import type { ResonanceTierMeta } from '@/services/resonanceTiers';
 
-/* 적 보스 이름 → avatar 한자 매핑.
+/* 적 보스 이름 → avatar 한자 매핑 (v1.2 5체).
  * Phase 1+ 이미지 swap 시 이 매핑은 fallback으로만 사용. */
 function bossAvatar(name: string): string {
-  if (name.includes('어린 너')) return '童';
-  if (name.includes('청년의 거짓말')) return '靑';
-  if (name.includes('어른의 가면')) return '面';
-  if (name.includes('청소년의 침묵')) return '默';
-  if (name.includes('어린 시절')) return '殘';
+  if (name.includes('원의 아이')) return '童';        // 5체 — 5~7세
+  if (name.includes('떠난 친구들')) return '友';      // 4체 — 8~12세
+  if (name.includes('미루는 학자')) return '冊';      // 3체 — 17~19세
+  if (name.includes('흐르는 그림자')) return '河';    // 2체 — 20대 / 한강
+  if (name.includes('남겨진 거인')) return '巨';      // 1체 — 30~40대 / 강남
   return '影';
 }
 

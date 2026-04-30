@@ -3,10 +3,11 @@ import { instantiateEnemy } from '../enemyVariation';
 import type { EnemyArchetype } from '../llm/mockData/combatNarrations';
 
 const arche: EnemyArchetype = {
-  name: '잊혀진 자 — 어린 시절의 잔해',
+  name: '잊혀진 자 — 남겨진 거인',
   description: '...',
   encounter: '...',
   hp: 60,
+  background: '...',
 };
 
 describe('instantiateEnemy', () => {
