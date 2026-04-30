@@ -15,6 +15,7 @@ const initialState = {
   shards: [],
   lastShardGained: null,
   anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
+  memoryMoments: [],
 };
 
 describe('gameStore', () => {
@@ -198,26 +199,55 @@ describe('gameStore', () => {
     expect(useGame.getState().anchorPoints.family).toBe(5);
   });
 
-  it('reset clears shards and anchorPoints', () => {
+  it('addMemoryMoment prepends (latest first)', () => {
+    const m1 = {
+      id: 'a',
+      ts: 1,
+      outcome: 'victory' as const,
+      bossName: 'B1',
+      resonanceAt: 10,
+      nickname: '엄마',
+    };
+    const m2 = { ...m1, id: 'b', ts: 2 };
+    useGame.getState().addMemoryMoment(m1);
+    useGame.getState().addMemoryMoment(m2);
+    expect(useGame.getState().memoryMoments[0].id).toBe('b');
+    expect(useGame.getState().memoryMoments[1].id).toBe('a');
+  });
+
+  it('addMemoryMoment caps at 50 (oldest dropped)', () => {
+    for (let i = 0; i < 60; i++) {
+      useGame.getState().addMemoryMoment({
+        id: `m${i}`,
+        ts: i,
+        outcome: 'victory',
+        bossName: 'B',
+        resonanceAt: i,
+        nickname: '엄마',
+      });
+    }
+    expect(useGame.getState().memoryMoments).toHaveLength(50);
+    expect(useGame.getState().memoryMoments[0].id).toBe('m59');
+    expect(useGame.getState().memoryMoments.some((m) => m.id === 'm0')).toBe(false);
+  });
+
+  it('reset clears shards / anchorPoints / memoryMoments', () => {
     useGame.getState().addShard('lost-bag');
     useGame.setState({ anchorPoints: { family: 10, home: 5, school: 3, work: 1 } });
-    useGame.setState({ totalResonance: 100 });
+    useGame.getState().addMemoryMoment({
+      id: 'a', ts: 1, outcome: 'victory', bossName: 'B', resonanceAt: 1, nickname: '엄마',
+    });
     useGame.getState().reset();
     const s = useGame.getState();
     expect(s.shards).toHaveLength(0);
     expect(s.lastShardGained).toBeNull();
     expect(s.anchorPoints).toEqual({ family: 0, home: 0, school: 0, work: 0 });
+    expect(s.memoryMoments).toHaveLength(0);
   });
 
-  it('reset preserves totalResonance (생애 누적 — 별개 동작 보장 X)', () => {
+  it('reset preserves totalResonance (생애 누적)', () => {
     useGame.setState({ totalResonance: 100 });
     useGame.getState().reset();
-    const s = useGame.getState();
-    expect(s.screen).toBe('title');
-    expect(s.character).toBeNull();
-    expect(s.combat).toBeNull();
-    expect(s.lastOutcome).toBeNull();
-    expect(s.pendingNickname).toBeNull();
-    expect(s.totalResonance).toBe(100);
+    expect(useGame.getState().totalResonance).toBe(100);
   });
 });

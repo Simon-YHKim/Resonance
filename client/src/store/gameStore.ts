@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AnchorId } from '@/services/anchors';
+import type { MemoryMoment } from '@/services/memoryMoments';
 import type {
   CharacterSheet,
   CombatOutcome,
@@ -35,6 +36,8 @@ interface GameState {
   lastShardGained: ShardId | null;
   /** 마음의 거점 누적 점수 (v2.1 §추억 거점 Phase 0) */
   anchorPoints: Record<AnchorId, number>;
+  /** 기억 순간 — 매 결말 자동 캡처 (v2.3 §22.3). 최신이 앞 (unshift). */
+  memoryMoments: MemoryMoment[];
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -47,6 +50,8 @@ interface GameState {
   addShard: (id: ShardId) => void;
   /** 4 거점 중 1+ 에 1점씩 가산 (dialogue 액션 시 호출). */
   addAnchorPoints: (ids: AnchorId[]) => void;
+  /** 기억 순간 추가 — 결말 시 자동 호출. 최신이 앞으로. */
+  addMemoryMoment: (moment: MemoryMoment) => void;
   reset: () => void;
 }
 
@@ -65,6 +70,7 @@ export const useGame = create<GameState>()(
       shards: [],
       lastShardGained: null,
       anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
+      memoryMoments: [],
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -99,6 +105,12 @@ export const useGame = create<GameState>()(
           }
           return { anchorPoints: next };
         }),
+      addMemoryMoment: (moment) =>
+        set((s) => ({
+          // 최신이 앞으로 — 시트 타임라인 위에 표시
+          // 최대 50개 한도 (오래된 것 자동 truncate)
+          memoryMoments: [moment, ...s.memoryMoments].slice(0, 50),
+        })),
       reset: () =>
         set({
           screen: 'title',
@@ -112,6 +124,7 @@ export const useGame = create<GameState>()(
           shards: [],
           lastShardGained: null,
           anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
+          memoryMoments: [],
         }),
     }),
     {
@@ -122,6 +135,7 @@ export const useGame = create<GameState>()(
         combatCount: s.combatCount,
         shards: s.shards,
         anchorPoints: s.anchorPoints,
+        memoryMoments: s.memoryMoments,
       }),
     },
   ),

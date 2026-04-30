@@ -13,6 +13,7 @@ import {
 import { getTier } from '@/services/resonanceTiers';
 import { rollShardDrop, shardForBoss } from '@/services/shards';
 import { anchorsFor } from '@/services/anchors';
+import { newMomentId } from '@/services/memoryMoments';
 import { haptic } from '@/utils/haptic';
 
 type Status = 'encounter' | 'idle' | 'narrating' | 'resolving';
@@ -171,6 +172,23 @@ export function CombatScreen() {
             useGame.getState().addShard(shardId);
           }
         }
+      }
+
+      // 기억 순간 자동 캡처 (v2.3 §22.3)
+      // 모든 4 outcome 캡처 — defeat/fled도 의미 있는 순간.
+      // resonance bonus 포함된 최종 잔잔으로 기록.
+      const finalResonance =
+        useGame.getState().totalResonance + newResonance + resonanceBonusFor(outcome);
+      const ch = useGame.getState().character;
+      if (ch) {
+        useGame.getState().addMemoryMoment({
+          id: newMomentId(),
+          ts: Date.now(),
+          outcome,
+          bossName: enemy.name,
+          resonanceAt: finalResonance,
+          nickname: ch.nickname,
+        });
       }
 
       endCombat(outcome, newResonance + resonanceBonusFor(outcome));
