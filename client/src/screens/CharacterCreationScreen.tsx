@@ -79,9 +79,9 @@ export function CharacterCreationScreen() {
       <div className="max-w-sm w-full mx-auto">
         <ActionButton
           disabled={phase !== 'done'}
-          onClick={() => goTo('characterSheet')}
+          onClick={() => goTo('hearth')}
         >
-          {phase === 'done' ? '나의 모습을 본다' : '…'}
+          {phase === 'done' ? '기억의 향로로' : '…'}
         </ActionButton>
       </div>
     </div>

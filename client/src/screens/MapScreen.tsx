@@ -181,8 +181,8 @@ export function MapScreen() {
       </div>
 
       <div className="max-w-sm w-full mx-auto space-y-3">
-        <ActionButton variant="ghost" onClick={() => goTo('characterSheet')}>
-          ← 잔향의 자리로
+        <ActionButton variant="ghost" onClick={() => goTo('hearth')}>
+          ← 기억의 향로
         </ActionButton>
       </div>
     </div>

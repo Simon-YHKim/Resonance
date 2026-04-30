@@ -103,14 +103,18 @@ export interface Shard {
   acquiredAt: number;
 }
 
-/** 화면 상태 머신 — Phase 0 7개 화면 (map은 거리 모드).
- *  방구석 모드: title → nickname → creation → sheet → combat → result
- *  거리 모드:   title → nickname → creation → sheet → map → combat → result */
+/** 화면 상태 머신 — Phase 0 8개 화면.
+ *  '기억의 향로'(hearth)는 캐릭터 정비 로비 — 시트/지도/NPC/시장 진입.
+ *  방구석 모드: title → nickname → creation → hearth → combat → result
+ *  거리 모드:   title → nickname → creation → hearth → map → combat → result */
 export type Screen =
   | 'title'
   | 'nicknameInput'
   | 'characterCreation'
+  | 'hearth'
   | 'characterSheet'
   | 'map'
+  | 'npc'
+  | 'shop'
   | 'combat'
   | 'result';
