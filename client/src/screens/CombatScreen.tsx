@@ -39,6 +39,8 @@ export function CombatScreen() {
    * Phase 1+ WoW식 다중 액션 시퀀스 + 사용자 정의 매크로명. */
   const [lastAction, setLastAction] = useState<CombatAction | null>(null);
   const cancelRef = useRef(false);
+  /* 전투 통계 — 결말 시 종합 기여도 분류용 (v2.3 §22.3 Phase 0) */
+  const statsRef = useRef({ attackCount: 0, dialogueCount: 0, fleeCount: 0 });
 
   // 첫 조우 묘사 1회 재생
   useEffect(() => {
@@ -83,6 +85,11 @@ export function CombatScreen() {
 
     // 매크로 보존 — 도망 외 액션만 (도망은 결말이라 반복 의미 없음)
     if (action !== 'flee') setLastAction(action);
+
+    // 통계 누적 (결말 시 종합 기여도 분류)
+    if (action === 'attack') statsRef.current.attackCount += 1;
+    else if (action === 'dialogue') statsRef.current.dialogueCount += 1;
+    else if (action === 'flee') statsRef.current.fleeCount += 1;
 
     // 액션별 햅틱 — 공격은 firm(중요), 대화는 soft, 도망은 tap
     haptic(action === 'attack' ? 'firm' : action === 'dialogue' ? 'soft' : 'tap');
@@ -183,7 +190,6 @@ export function CombatScreen() {
 
       // 기억 순간 자동 캡처 (v2.3 §22.3)
       // 모든 4 outcome 캡처 — defeat/fled도 의미 있는 순간.
-      // resonance bonus 포함된 최종 잔잔으로 기록.
       const finalResonance =
         useGame.getState().totalResonance + newResonance + resonanceBonusFor(outcome);
       const ch = useGame.getState().character;
@@ -197,6 +203,14 @@ export function CombatScreen() {
           nickname: ch.nickname,
         });
       }
+
+      // 종합 기여도 — 전투 통계 store에 기록 (결말 화면 표시)
+      useGame.getState().setLastCombatStats({
+        attackCount: statsRef.current.attackCount,
+        dialogueCount: statsRef.current.dialogueCount,
+        fleeCount: statsRef.current.fleeCount,
+        totalTurns: nextTurn,
+      });
 
       endCombat(outcome, newResonance + resonanceBonusFor(outcome));
       goTo('result');
