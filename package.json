@@ -7,7 +7,8 @@
     "dev": "pnpm --filter ./client dev",
     "build": "pnpm --filter ./client build",
     "test": "pnpm --filter ./client test",
-    "typecheck": "pnpm --filter ./client typecheck"
+    "typecheck": "pnpm --filter ./client typecheck",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true"
   },
   "packageManager": "pnpm@10.33.0"
 }
