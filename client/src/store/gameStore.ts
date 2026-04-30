@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import type { AnchorId } from '@/services/anchors';
 import type {
   CharacterSheet,
   CombatOutcome,
@@ -32,6 +33,8 @@ interface GameState {
   shards: Shard[];
   /** 직전 전투에서 새로 획득한 조각 (결말 화면 알림용, 1전투에 최대 1개) */
   lastShardGained: ShardId | null;
+  /** 마음의 거점 누적 점수 (v2.1 §추억 거점 Phase 0) */
+  anchorPoints: Record<AnchorId, number>;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -42,6 +45,8 @@ interface GameState {
   endCombat: (outcome: CombatOutcome, resonanceGain: number) => void;
   /** 조각 획득 — 같은 id 중복 허용 (4% 드롭 풀 활용 가능). */
   addShard: (id: ShardId) => void;
+  /** 4 거점 중 1+ 에 1점씩 가산 (dialogue 액션 시 호출). */
+  addAnchorPoints: (ids: AnchorId[]) => void;
   reset: () => void;
 }
 
@@ -59,6 +64,7 @@ export const useGame = create<GameState>()(
       combatCount: 0,
       shards: [],
       lastShardGained: null,
+      anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -85,6 +91,14 @@ export const useGame = create<GameState>()(
           shards: [...s.shards, { id, acquiredAt: Date.now() }],
           lastShardGained: id,
         })),
+      addAnchorPoints: (ids) =>
+        set((s) => {
+          const next = { ...s.anchorPoints };
+          for (const id of ids) {
+            next[id] = (next[id] ?? 0) + 1;
+          }
+          return { anchorPoints: next };
+        }),
       reset: () =>
         set({
           screen: 'title',
@@ -97,6 +111,7 @@ export const useGame = create<GameState>()(
           combatCount: 0,
           shards: [],
           lastShardGained: null,
+          anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
         }),
     }),
     {
@@ -106,6 +121,7 @@ export const useGame = create<GameState>()(
         totalResonance: s.totalResonance,
         combatCount: s.combatCount,
         shards: s.shards,
+        anchorPoints: s.anchorPoints,
       }),
     },
   ),

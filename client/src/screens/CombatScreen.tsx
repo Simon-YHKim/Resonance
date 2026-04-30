@@ -12,6 +12,7 @@ import {
 } from '@/services/combatOutcome';
 import { getTier } from '@/services/resonanceTiers';
 import { rollShardDrop, shardForBoss } from '@/services/shards';
+import { anchorsFor } from '@/services/anchors';
 import { haptic } from '@/utils/haptic';
 
 type Status = 'encounter' | 'idle' | 'narrating' | 'resolving';
@@ -107,6 +108,17 @@ export function CombatScreen() {
         ? Math.round(result.enemyHpDelta * (buffs.attackDamageMultiplier - 1))
         : 0;
 
+    // dialogue 액션 시 캐릭터 키워드와 매칭되는 거점에 +1 (v2.1 §추억 거점)
+    if (action === 'dialogue') {
+      const ch = useGame.getState().character;
+      if (ch) {
+        const anchorIds = anchorsFor(ch.linkedKeywords);
+        if (anchorIds.length > 0) {
+          useGame.getState().addAnchorPoints(anchorIds);
+        }
+      }
+    }
+
     const newPlayerHp = Math.max(0, Math.min(player.maxHp, player.hp + result.playerHpDelta));
     const newPlayerStamina = Math.max(
       0,
@@ -139,9 +151,6 @@ export function CombatScreen() {
 
     if (outcome) {
       // outcome별 햅틱 — 결말의 무게에 맞춰
-      // victory/defeat: firm 두 번 (무게)
-      // fled: tap (가벼운 도망)
-      // stalemate: soft (안개 잔잔)
       haptic(
         outcome === 'victory' || outcome === 'defeat'
           ? 'firm'
@@ -151,8 +160,7 @@ export function CombatScreen() {
       );
 
       // victory 시 기억의 조각 드롭 판정 (v2.2 §18.2)
-      // 첫 클리어 100% / 이후 4%. addShard는 결말 화면이 lastShardGained로
-      // 알림 표시.
+      // 첫 클리어 100% / 이후 4%.
       if (outcome === 'victory') {
         const shardId = shardForBoss(enemy.name);
         if (shardId !== null) {
