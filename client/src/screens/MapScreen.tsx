@@ -14,6 +14,7 @@ import { useGame } from '@/store/gameStore';
 import { getTier } from '@/services/resonanceTiers';
 import { mockLocation, GRID, cellLabelAt } from '@/services/location/MockLocationService';
 import { pickForgetter } from '@/services/llm/mockData/combatNarrations';
+import { instantiateEnemy } from '@/services/enemyVariation';
 import { withLocation } from '@/services/llm/mockData/locations';
 import type { LocationState } from '@/services/location/LocationService';
 import { haptic } from '@/utils/haptic';
@@ -38,16 +39,17 @@ export function MapScreen() {
     if (pin) {
       haptic('soft');
       const archetype = pickForgetter(pin.bossTier, totalResonance);
+      const enemyInst = instantiateEnemy(archetype); // ±10% HP variance
       // 핀 제거 후 전투 진입 (핀은 한 번만 만남)
       setState(mockLocation.removePin(next, pin.id));
       startCombat({
         player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
         enemy: {
-          name: archetype.name,
-          description: archetype.description,
-          encounter: withLocation(archetype.encounter, totalResonance),
-          hp: archetype.hp,
-          maxHp: archetype.hp,
+          name: enemyInst.name,
+          description: enemyInst.description,
+          encounter: withLocation(enemyInst.encounter, totalResonance),
+          hp: enemyInst.hp,
+          maxHp: enemyInst.maxHp,
         },
         turn: 0,
         resonance: 0,
