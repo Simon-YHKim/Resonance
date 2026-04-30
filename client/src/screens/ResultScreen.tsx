@@ -6,6 +6,7 @@ import { getTier } from '@/services/resonanceTiers';
 import { endingFooter } from '@/services/categoryEndings';
 import { crossedMilestone } from '@/services/milestones';
 import { SHARD_META } from '@/services/shards';
+import { SHAPE_META, classifyShape } from '@/services/contribution';
 import { haptic } from '@/utils/haptic';
 import { useCountUp } from '@/utils/useCountUp';
 import { useEffect } from 'react';
@@ -35,10 +36,15 @@ export function ResultScreen() {
   const lastCombatGain = useGame((s) => s.lastCombatGain);
   const resonanceBeforeLastCombat = useGame((s) => s.resonanceBeforeLastCombat);
   const lastShardGained = useGame((s) => s.lastShardGained);
+  const lastCombatStats = useGame((s) => s.lastCombatStats);
   const character = useGame((s) => s.character);
   const goTo = useGame((s) => s.goTo);
   const startCombat = useGame((s) => s.startCombat);
   const shardMeta = lastShardGained ? SHARD_META[lastShardGained] : null;
+  const shape =
+    lastCombatStats && lastOutcome
+      ? SHAPE_META[classifyShape(lastCombatStats, lastOutcome)]
+      : null;
 
   // 결말 없이 진입한 경우 보호
   useEffect(() => {
@@ -131,6 +137,24 @@ export function ResultScreen() {
             <p className="display-text text-origin text-sm mb-1">{shardMeta.label}</p>
             <p className="text-fg-muted text-xs leading-relaxed">
               {shardMeta.description}
+            </p>
+          </div>
+        )}
+
+        {shape && lastCombatStats && (
+          <div className="mt-6 animate-fade-in-slow">
+            <p className="text-fg-dim text-[0.6rem] tracking-[0.3em] uppercase mb-1">
+              이번 결의 형태
+            </p>
+            <div className="flex justify-between items-baseline">
+              <p className={`display-text text-sm ${shape.color}`}>{shape.label}</p>
+              <p className="text-fg-dim text-[0.65rem] tabular-nums">
+                공{lastCombatStats.attackCount} · 말{lastCombatStats.dialogueCount}
+                {lastCombatStats.fleeCount > 0 && ` · 도${lastCombatStats.fleeCount}`}
+              </p>
+            </div>
+            <p className="text-fg-muted text-xs leading-relaxed mt-1 italic">
+              {shape.description}
             </p>
           </div>
         )}

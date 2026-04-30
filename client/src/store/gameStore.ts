@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AnchorId } from '@/services/anchors';
+import type { CombatStats } from '@/services/contribution';
 import type { MemoryMoment } from '@/services/memoryMoments';
 import type {
   CharacterSheet,
@@ -38,6 +39,8 @@ interface GameState {
   anchorPoints: Record<AnchorId, number>;
   /** 기억 순간 — 매 결말 자동 캡처 (v2.3 §22.3). 최신이 앞 (unshift). */
   memoryMoments: MemoryMoment[];
+  /** 직전 전투 통계 — 결말 화면 종합 기여도 표시용 */
+  lastCombatStats: CombatStats | null;
 
   /* actions */
   goTo: (screen: Screen) => void;
@@ -52,6 +55,8 @@ interface GameState {
   addAnchorPoints: (ids: AnchorId[]) => void;
   /** 기억 순간 추가 — 결말 시 자동 호출. 최신이 앞으로. */
   addMemoryMoment: (moment: MemoryMoment) => void;
+  /** 결말 직전 호출 — 직전 전투 통계 기록 */
+  setLastCombatStats: (stats: CombatStats) => void;
   reset: () => void;
 }
 
@@ -71,6 +76,7 @@ export const useGame = create<GameState>()(
       lastShardGained: null,
       anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
       memoryMoments: [],
+      lastCombatStats: null,
 
       goTo: (screen) => set({ screen }),
       setPendingNickname: (pendingNickname) => set({ pendingNickname }),
@@ -107,10 +113,9 @@ export const useGame = create<GameState>()(
         }),
       addMemoryMoment: (moment) =>
         set((s) => ({
-          // 최신이 앞으로 — 시트 타임라인 위에 표시
-          // 최대 50개 한도 (오래된 것 자동 truncate)
           memoryMoments: [moment, ...s.memoryMoments].slice(0, 50),
         })),
+      setLastCombatStats: (stats) => set({ lastCombatStats: stats }),
       reset: () =>
         set({
           screen: 'title',
@@ -125,6 +130,7 @@ export const useGame = create<GameState>()(
           lastShardGained: null,
           anchorPoints: { family: 0, home: 0, school: 0, work: 0 },
           memoryMoments: [],
+          lastCombatStats: null,
         }),
     }),
     {
