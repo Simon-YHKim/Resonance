@@ -21,18 +21,23 @@ describe('SHARD_META', () => {
   });
 });
 
-describe('shardForBoss', () => {
+describe('shardForBoss (v1.2 5체)', () => {
   it('returns matching shard id for each boss', () => {
-    expect(shardForBoss('잊혀진 자 — 어린 시절의 잔해')).toBe('lost-bag');
-    expect(shardForBoss('잊혀진 자 — 청소년의 침묵')).toBe('sealed-lips');
-    expect(shardForBoss('잊혀진 자 — 어른의 가면')).toBe('pressed-shirt');
-    expect(shardForBoss('잊혀진 자 — 청년의 거짓말')).toBe('half-smile');
-    expect(shardForBoss('잊혀진 자 — 어린 너')).toBe('small-hand');
+    expect(shardForBoss('잊혀진 자 — 남겨진 거인')).toBe('shed-namecard');
+    expect(shardForBoss('잊혀진 자 — 흐르는 그림자')).toBe('river-glance');
+    expect(shardForBoss('잊혀진 자 — 미루는 학자')).toBe('folded-page');
+    expect(shardForBoss('잊혀진 자 — 떠난 친구들')).toBe('half-wave');
+    expect(shardForBoss('잊혀진 자 — 원의 아이')).toBe('first-step');
   });
 
   it('returns null for unknown boss', () => {
     expect(shardForBoss('알 수 없는 적')).toBeNull();
     expect(shardForBoss('')).toBeNull();
+  });
+
+  it('returns null for old (pre-v1.2) boss names', () => {
+    expect(shardForBoss('잊혀진 자 — 어린 시절의 잔해')).toBeNull();
+    expect(shardForBoss('잊혀진 자 — 어린 너')).toBeNull();
   });
 });
 

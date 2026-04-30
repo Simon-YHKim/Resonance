@@ -178,26 +178,26 @@ describe('gameStore', () => {
   });
 
   it('addShard appends and sets lastShardGained', () => {
-    useGame.getState().addShard('lost-bag');
+    useGame.getState().addShard('shed-namecard');
     expect(useGame.getState().shards).toHaveLength(1);
-    expect(useGame.getState().shards[0].id).toBe('lost-bag');
-    expect(useGame.getState().lastShardGained).toBe('lost-bag');
+    expect(useGame.getState().shards[0].id).toBe('shed-namecard');
+    expect(useGame.getState().lastShardGained).toBe('shed-namecard');
 
-    useGame.getState().addShard('sealed-lips');
+    useGame.getState().addShard('river-glance');
     expect(useGame.getState().shards).toHaveLength(2);
-    expect(useGame.getState().lastShardGained).toBe('sealed-lips');
+    expect(useGame.getState().lastShardGained).toBe('river-glance');
   });
 
   it('addShard allows duplicates (4% drops accumulate)', () => {
-    useGame.getState().addShard('lost-bag');
-    useGame.getState().addShard('lost-bag');
+    useGame.getState().addShard('shed-namecard');
+    useGame.getState().addShard('shed-namecard');
     expect(useGame.getState().shards).toHaveLength(2);
-    expect(useGame.getState().shards.every((s) => s.id === 'lost-bag')).toBe(true);
+    expect(useGame.getState().shards.every((s) => s.id === 'shed-namecard')).toBe(true);
   });
 
   it('startCombat resets lastShardGained', () => {
-    useGame.getState().addShard('lost-bag');
-    expect(useGame.getState().lastShardGained).toBe('lost-bag');
+    useGame.getState().addShard('shed-namecard');
+    expect(useGame.getState().lastShardGained).toBe('shed-namecard');
     const combat: CombatState = {
       player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
       enemy: { name: 'X', description: 'Y', encounter: 'Z', hp: 60, maxHp: 60 },
@@ -258,7 +258,7 @@ describe('gameStore', () => {
   });
 
   it('reset clears shards / anchorPoints / memoryMoments', () => {
-    useGame.getState().addShard('lost-bag');
+    useGame.getState().addShard('shed-namecard');
     useGame.setState({ anchorPoints: { family: 10, home: 5, school: 3, work: 1 } });
     useGame.getState().addMemoryMoment({
       id: 'a', ts: 1, outcome: 'victory', bossName: 'B', resonanceAt: 1, nickname: '엄마',
@@ -272,13 +272,13 @@ describe('gameStore', () => {
   });
 
   it('spendShards removes oldest shards (FIFO)', () => {
-    useGame.getState().addShard('lost-bag');
-    useGame.getState().addShard('sealed-lips');
-    useGame.getState().addShard('pressed-shirt');
+    useGame.getState().addShard('shed-namecard');
+    useGame.getState().addShard('river-glance');
+    useGame.getState().addShard('folded-page');
     expect(useGame.getState().shards).toHaveLength(3);
     useGame.getState().spendShards(2);
     expect(useGame.getState().shards).toHaveLength(1);
-    expect(useGame.getState().shards[0].id).toBe('pressed-shirt');
+    expect(useGame.getState().shards[0].id).toBe('folded-page');
   });
 
   it('addResonance adds delta to totalResonance', () => {

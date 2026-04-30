@@ -22,35 +22,40 @@ interface ShardMeta {
 }
 
 export const SHARD_META: Record<ShardId, ShardMeta> = {
-  'lost-bag': {
-    id: 'lost-bag',
-    bossName: '잊혀진 자 — 어린 시절의 잔해',
-    label: '잃은 가방의 조각',
-    description: '한 번도 메지 못한 가방 어깨끈의 끝자락. 안에 든 것은 더 이상 보이지 않는다.',
+  'shed-namecard': {
+    id: 'shed-namecard',
+    bossName: '잊혀진 자 — 남겨진 거인',
+    label: '못 건넨 명함의 조각',
+    description:
+      '누구에게도 닿지 못한 채 굳어버린 명함의 한 모서리. 회의실의 빈 자리 냄새가 옅게 남아 있다.',
   },
-  'sealed-lips': {
-    id: 'sealed-lips',
-    bossName: '잊혀진 자 — 청소년의 침묵',
-    label: '굳은 입술의 조각',
-    description: '말을 한 번도 흘리지 않은 채로 굳어버린 입술의 한 조각. 차갑다.',
+  'river-glance': {
+    id: 'river-glance',
+    bossName: '잊혀진 자 — 흐르는 그림자',
+    label: '강물의 한 자국',
+    description:
+      '한 사람의 윤곽이 비치다 사라진 자리에 남은 결. 손에 닿으면 한 박자 늦게 차다.',
   },
-  'pressed-shirt': {
-    id: 'pressed-shirt',
-    bossName: '잊혀진 자 — 어른의 가면',
-    label: '다려진 셔츠의 조각',
-    description: '옷깃 안쪽의 작은 얼룩이 굳은 셔츠 자락. 너의 손에 익숙한 빳빳함.',
+  'folded-page': {
+    id: 'folded-page',
+    bossName: '잊혀진 자 — 미루는 학자',
+    label: '미뤄둔 페이지의 조각',
+    description:
+      '펼쳐두고 끝내 덮어버린 책의 한 모서리. 다음으로 미뤄둔 답이 거기 적혀 있었던 것 같다.',
   },
-  'half-smile': {
-    id: 'half-smile',
-    bossName: '잊혀진 자 — 청년의 거짓말',
-    label: '한쪽만 올라간 미소의 조각',
-    description: '거짓 위로의 미소가 굳어 만들어진 작은 결정. 만지면 한 박자 늦게 따뜻하다.',
+  'half-wave': {
+    id: 'half-wave',
+    bossName: '잊혀진 자 — 떠난 친구들',
+    label: '흔들다 만 손의 조각',
+    description:
+      '인사하다 닿지 못한 손짓이 굳어 만들어진 결정. 골목의 모퉁이 자국이 함께 굳어 있다.',
   },
-  'small-hand': {
-    id: 'small-hand',
-    bossName: '잊혀진 자 — 어린 너',
-    label: '작은 손의 조각',
-    description: '너의 손바닥보다 작은 손이 한 번 너를 잡았다 놓은 자리. 가장 처음 잊은 자의 흔적.',
+  'first-step': {
+    id: 'first-step',
+    bossName: '잊혀진 자 — 원의 아이',
+    label: '가장 처음 자리의 조각',
+    description:
+      '회색 운동장 한가운데 작은 발자국이 한 번 찍혔다 사라진 자리. 가장 처음 잊은 자의 흔적.',
   },
 };
 
