@@ -70,6 +70,8 @@ export function ResultScreen() {
   const chapterNow = chapterForTier(tier.tier, totalResonance);
   const chapterChanged = chapterBefore !== null && chapterBefore !== chapterNow;
   const newChapter = chapterChanged ? CHAPTERS[chapterNow] : null;
+  // 5장(원의 자리) 첫 진입 — 미니 엔딩 크레딧 트리거 (v2.3 §엔딩 크레딧 Phase 0)
+  const reachedOrigin = chapterChanged && chapterNow === 5;
 
   // 마일스톤 — tier 승급 없을 때만 표시 (중첩 방지)
   const milestone =
@@ -161,6 +163,27 @@ export function ResultScreen() {
           <p className="text-resonance/70 leading-relaxed display-text mt-4 text-xs animate-fade-in-slow">
             ◦ {milestone.message}
           </p>
+        )}
+
+        {/* 5장 첫 진입 — 미니 엔딩 크레딧 (v2.3 §엔딩 크레딧 Phase 0)
+            Phase 1+: 16장 LLM 생성 + Nano Banana Pro 이미지 */}
+        {reachedOrigin && (
+          <div className="mt-6 rounded-md px-5 py-5 border border-origin/60 bg-bg-elevated/60 animate-fade-in-slow">
+            <p className="text-fg-dim text-[0.6rem] tracking-[0.4em] uppercase mb-3">
+              엔딩 크레딧 · Phase 0
+            </p>
+            <p className="display-text text-origin text-base leading-relaxed mb-3">
+              원의 자리에서, 너는 가장 처음 잊은 자의 손에 닿는다.
+            </p>
+            <p className="text-fg-muted text-xs leading-relaxed mb-3">
+              너의 이름을 거리가 한 번 더 부른다. 이 잔향은, 이제 너의 것이다.
+              <br />
+              너는 거리를 떠날 수도, 한 번 더 들을 수도 있다.
+            </p>
+            <p className="text-fg-dim text-[0.65rem] italic mt-4">
+              — Phase 1+ 16장 엔딩 크레딧이 LLM과 함께 펼쳐진다.
+            </p>
+          </div>
         )}
 
         {shardMeta && (
