@@ -6,9 +6,14 @@
 
 @layer base {
   html, body, #root {
-    height: 100%;
-    background: var(--bg-primary);
-    color: var(--fg-primary);
+    /* svh = small viewport height — 모든 브라우저 UI(주소창·하단 툴바)가
+     * 표시된 상태의 가장 작은 viewport. 갤탭 Edge처럼 상하 툴바가 동시에
+     * 페이지 위에 떠 있는 환경에서도 콘텐츠가 가시 영역 안에 수렴.
+     * vh 폴백은 svh 미지원 구형 브라우저용. */
+    height: 100vh;
+    height: 100svh;
+    background: rgb(var(--bg-primary));
+    color: rgb(var(--fg-primary));
     font-family: var(--font-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -26,7 +31,7 @@
 
   input, textarea {
     font-family: inherit;
-    color: var(--fg-primary);
+    color: rgb(var(--fg-primary));
   }
 
   /* Disable text selection on game UI for native feel */
@@ -40,7 +45,7 @@
   .vignette {
     background:
       radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%),
-      var(--bg-primary);
+      rgb(var(--bg-primary));
   }
 
   .display-text {

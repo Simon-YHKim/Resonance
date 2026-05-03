@@ -1,0 +1,47 @@
+# Lighthouse CI — PR 마다 성능/접근성/PWA 회귀 검사.
+#
+# Phase 0 임계 (보수적):
+#   - performance ≥ 0.85 (모바일 simulated)
+#   - accessibility ≥ 0.90
+#   - best-practices ≥ 0.85
+#   - seo ≥ 0.85
+#   - PWA: 명시 임계 X (vite-plugin-pwa SW + manifest 충분)
+#
+# Phase 1+:
+#   - LCP < 2.5s 임계 강화
+#   - 실 LLM 도입 후 SSE 응답 시간 별도 측정
+
+name: Lighthouse
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build (preview base)
+        run: cd client && pnpm exec vite build
+
+      - name: Run Lighthouse CI
+        run: cd client && npx --yes @lhci/cli@0.14 autorun
+        env:
+          LHCI_BUILD_CONTEXT__CURRENT_HASH: ${{ github.event.pull_request.head.sha }}
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

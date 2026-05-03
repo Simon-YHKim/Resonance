@@ -14,14 +14,25 @@ describe('classifyByKeywords', () => {
     expect(classifyByKeywords('그림자')).toBe('D');
   });
 
-  it('returns H for general nicknames', () => {
-    expect(classifyByKeywords('민수')).toBe('H');
-    expect(classifyByKeywords('Simon')).toBe('H');
-    expect(classifyByKeywords('파란하늘')).toBe('H');
+  it('classifies common Korean names as B', () => {
+    expect(classifyByKeywords('민수')).toBe('B');
+    expect(classifyByKeywords('영희')).toBe('B');
+    expect(classifyByKeywords('지영')).toBe('B');
+    expect(classifyByKeywords('철수네집')).toBe('B'); // 부분 매칭
   });
 
-  it('prefers D over A when both keywords present', () => {
-    // "엄마" + "어둠" 동시 — 우선순위 D
+  it('returns H for unmapped general nicknames', () => {
+    expect(classifyByKeywords('Simon')).toBe('H');
+    expect(classifyByKeywords('파란하늘')).toBe('H');
+    expect(classifyByKeywords('야간비행')).toBe('H');
+  });
+
+  it('respects priority D > A > B > H', () => {
+    // D > A
     expect(classifyByKeywords('엄마의어둠')).toBe('D');
+    // D > B
+    expect(classifyByKeywords('민수의그림자')).toBe('D');
+    // A > B
+    expect(classifyByKeywords('엄마민수')).toBe('A');
   });
 });
