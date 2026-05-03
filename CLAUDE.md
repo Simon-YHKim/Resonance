@@ -148,6 +148,7 @@ pnpm wrangler deploy         # https://resonance-worker.<account>.workers.dev
 | 테스트 작성 | `test-gen` |
 | 커밋 | `commit` |
 | 새 앱 처음부터 | `app-dev-orchestrator` (21단계 마스터 파이프라인) |
+| 게임 스토리·시나리오·캐릭터 백스토리·대사·월드빌딩·NPC·복선·여운 있는 결말 | `game-story-writer` (소설가·각본가·내러티브 디자이너 수준 작법 — 5대 비협상 원칙) |
 
 전체 INDEX: `.claude/skills/INDEX.md`
 

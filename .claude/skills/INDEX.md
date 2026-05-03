@@ -2,7 +2,7 @@
 
 이 환경에 설치된 모든 skill 의 카테고리별 맵. 세션 시작 시 참고용.
 
-**총 51개** skill (Gstack 36 + simon-stack 13 + 기타 2).
+**총 52개** skill (Gstack 36 + simon-stack 13 + 게임/내러티브 1 + 기타 2).
 
 ## 🧭 Orchestrators (상위 지휘)
 
@@ -56,6 +56,12 @@
 | `nextjs-optimizer` | Next.js 5대 영역 성능 최적화 |
 | `project-context-md` | 프로젝트 CLAUDE.md 생성 |
 | `claude-api` | Claude API / Anthropic SDK 빌드 |
+
+## 📖 Game / Narrative — 게임 서사
+
+| Skill | 역할 |
+|---|---|
+| `game-story-writer` | 메인 스토리·시나리오·캐릭터 바이블·백스토리·퀘스트·대사·월드빌딩 (소설가·각본가 수준 작법 강제). 5대 비협상 원칙: 감정선·셋업페이오프·디테일=의도·다중스타일·여백 설계 |
 
 ## 🔍 Review / QA
 
@@ -156,6 +162,15 @@
 - **Gstack**: 실행 파이프라인 (명령어·스크립트 있음, bin/ 활용)
 - **simon-stack**: 방법론·보안·학습 (markdown 가이드 중심)
 - 충돌 시 Gstack 이 구체 실행, simon-stack 이 상위 원칙 제공
+
+### 5. 게임 서사 / 스토리 작업
+
+→ **game-story-writer** 단독. 트리거: `게임 스토리`, `시나리오`, `캐릭터 설정`, `백스토리`, `퀘스트`, `대사`, `NPC`, `세계관`, `복선`, `여운 있는 결말` …
+
+잔향(Resonance) 프로젝트 컨텍스트:
+- 1장 시나리오 텍스트 작성 (`docs/01_CORE_DECISIONS/01_*v1.2*.md` 진실의 원천 따름)
+- 5체 보스 시드 백스토리 / NPC 동료 아크 / 16장 엔딩 크레딧
+- 데이터: `client/src/services/llm/mockData/` 의 mockData 풀 추가 시 활용
 
 ---
 
