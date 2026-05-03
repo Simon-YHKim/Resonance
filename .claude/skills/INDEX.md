@@ -2,7 +2,7 @@
 
 이 환경에 설치된 모든 skill 의 카테고리별 맵. 세션 시작 시 참고용.
 
-**총 51개** skill (Gstack 36 + simon-stack 13 + 기타 2).
+**총 54개** skill (Gstack 36 + simon-stack 16 + 기타 2).
 
 ## 🧭 Orchestrators (상위 지휘)
 
@@ -10,6 +10,8 @@
 |---|---|
 | `app-dev-orchestrator` | 신규 앱 21단계 마스터 파이프라인 |
 | `security-orchestrator` | 보안 감사 5단계 순차 실행 |
+| `dev-orchestrator` | 기능 구현·버그 수정 7단계 (diagnose → code-health → simon-tdd → test-gen → health scan → review → commit) |
+| `agent-delegate` | sub-agent 병렬 위임 + context envelope + output contracts (token 절약) |
 | `autoplan` (Gstack) | CEO/Design/Eng/DX 리뷰 자동 파이프라인 |
 
 
@@ -53,6 +55,7 @@
 |---|---|
 | `simon-tdd` | RED-GREEN-REFACTOR 강제 + 검증 루프 |
 | `simon-worktree` | 병렬 세션 git worktree 격리 |
+| `code-health-guard` | 파일 구조·아키텍처 점검 (placement·import 방향·함수 크기·중복) |
 | `nextjs-optimizer` | Next.js 5대 영역 성능 최적화 |
 | `project-context-md` | 프로젝트 CLAUDE.md 생성 |
 | `claude-api` | Claude API / Anthropic SDK 빌드 |
