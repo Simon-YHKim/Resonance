@@ -1,8 +1,82 @@
-# 잔향 (Resonance) — 프로젝트 문서 패키지
+# 잔향 (Resonance) — Monorepo
 
-> **이 패키지는 Claude Code가 잔향(殘響, Resonance: Echoes of a Forgotten Self) 프로젝트를 빌드하기 위한 모든 결정사항·세계관·시스템 명세를 담고 있습니다.**
+> **LLM 기반 GPS 텍스트 RPG.** 한 줄 정의: 사회에 맞춰지며 잘려나간 자기와 한 번도 되어보지 못한 자기를 한 조각씩 만나는 *위로하는 게임*. 출시 목표 2026.11.
 
-**프로젝트 한 줄 정의**: LLM 기반 GPS 텍스트 MMORPG. 어른이 되며 잘려나간 자기와 한 번도 되어보지 못한 자기를 한 조각씩 만나며, 내 안에 살아 있는 모든 가능성을 다시 그리는 *위로하는 게임*.
+---
+
+## 모노레포 구조
+
+```
+resonance/
+├── apps/
+│   ├── web/        Vite + React 18 + TS + Capacitor (Phase 0 검증 — 보존)
+│   ├── mobile/     Expo SDK 53 + React Native 0.76 + Expo Router 4 + NativeWind 4
+│   │              → 웹 + iOS + Android 단일 코드베이스 (Phase 1.5+ 신규)
+│   └── worker/     Cloudflare Workers + Hono + D1 (Phase 1 — 9 테이블 + 닉네임 분석)
+├── packages/
+│   ├── shared/     도메인 타입·Zod 스키마·ResonanceClient (web/mobile/worker 공유)
+│   └── ui/         공유 RN-Web 컴포넌트 (Phase 2+)
+└── docs/           기획·결정·시스템 명세
+```
+
+**스택 한눈에**:
+
+| 영역 | 선택 |
+|---|---|
+| 클라이언트 (mobile/web) | Expo SDK 53 + RN 0.76 + Expo Router 4 + NativeWind 4 |
+| 클라이언트 (web 보존) | Vite + React 18 + Zustand + Capacitor |
+| 백엔드 | Cloudflare Workers + Hono + D1 + KV |
+| LLM | Anthropic Haiku 4.5 (free) / Sonnet 4.6 (premium) / Mock fallback |
+| 인증 | Clerk (Phase 1.5+) |
+| 빌드·배포 | EAS Build + EAS Submit + Cloudflare Pages + GitHub Actions |
+| 모니터링 | MS Clarity + Sentry (Phase 2+) |
+
+---
+
+## 빠른 시작
+
+```bash
+pnpm install                    # 모노레포 1회 install (pnpm workspace + .npmrc hoist)
+
+# Worker (백엔드) — Phase 1
+pnpm --filter @resonance/worker test           # 85 tests / 95.5% coverage
+pnpm --filter @resonance/worker dev            # http://localhost:8787
+
+# Mobile (Expo) — Phase 1.5+
+pnpm dev:mobile                                 # Expo dev server (Metro)
+pnpm --filter @resonance/mobile web              # 웹만
+pnpm --filter @resonance/mobile ios              # iOS Simulator (macOS)
+pnpm --filter @resonance/mobile android          # Android Emulator
+
+# Web (Phase 0 검증 — 보존)
+pnpm dev                                         # Vite http://localhost:5173
+
+# 빌드
+pnpm build:mobile                                # apps/mobile/dist (Cloudflare Pages)
+cd apps/mobile && pnpm exec eas build --platform android --profile preview
+```
+
+---
+
+## 출시 경로
+
+| 플랫폼 | 빌드 | 배포 |
+|---|---|---|
+| **Web** | `pnpm build:mobile` (Expo metro static export) | Cloudflare Pages (`wrangler pages deploy`) |
+| **Android** | `eas build --platform android --profile production` | Google Play Store (`eas submit`) |
+| **iOS** | `eas build --platform ios --profile production` (macOS 없이도 클라우드 빌드) | App Store Connect (`eas submit`) |
+
+---
+
+## Claude Code 컨텍스트
+
+**다음 순서로 읽어주세요. 절대 순서를 바꾸지 마세요:**
+
+1. **`docs/00_START_HERE/PROJECT_SUMMARY.md`** ← *3분 안에 프로젝트 전체를 파악*
+2. **`docs/00_START_HERE/READ_ORDER.md`** ← *나머지 11개 문서를 어떤 순서로 읽을지*
+3. **`docs/01_CORE_DECISIONS/01_종합정리_v1.2_최신_진실의_원천.md`** ← *진실의 원천. 모든 결정의 토대*
+
+이후는 READ_ORDER.md를 따라가시면 됩니다.
 
 ---
 

@@ -1,0 +1,12 @@
+# 잔향 모바일 — Web export → Cloudflare Pages
+#
+# 사용:
+#   pnpm --filter @resonance/mobile export:web   # → dist/
+#   wrangler pages deploy dist --project-name=resonance-mobile
+
+name = "resonance-mobile"
+compatibility_date = "2026-04-01"
+pages_build_output_dir = "dist"
+
+[vars]
+EXPO_PUBLIC_WORKER_BASE_URL = "https://resonance-worker.<account>.workers.dev"
