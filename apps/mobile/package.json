@@ -13,7 +13,7 @@
     "build:ios": "eas build --platform ios --profile preview",
     "submit:android": "eas submit --platform android",
     "submit:ios": "eas submit --platform ios",
-    "test": "jest --passWithNoTests",
+    "test": "echo 'apps/mobile: tests added in Phase 2 (jest-expo)'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

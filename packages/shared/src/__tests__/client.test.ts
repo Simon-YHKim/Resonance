@@ -22,11 +22,12 @@ const sampleAnalysis = {
 };
 
 function fakeFetch(response: { status: number; body: unknown }) {
-  return vi.fn(async () =>
-    new Response(JSON.stringify(response.body), {
-      status: response.status,
-      headers: { 'Content-Type': 'application/json' },
-    }),
+  return vi.fn(
+    async (_input: RequestInfo | URL, _init?: RequestInit): Promise<Response> =>
+      new Response(JSON.stringify(response.body), {
+        status: response.status,
+        headers: { 'Content-Type': 'application/json' },
+      }),
   );
 }
 
