@@ -5,9 +5,15 @@
   "description": "잔향(Resonance: Echoes of a Forgotten Self) - LLM-driven GPS text MMORPG",
   "scripts": {
     "dev": "pnpm --filter ./client dev",
+    "dev:worker": "pnpm --filter ./worker dev",
     "build": "pnpm --filter ./client build",
-    "test": "pnpm --filter ./client test",
-    "typecheck": "pnpm --filter ./client typecheck"
+    "test": "pnpm -r test",
+    "test:client": "pnpm --filter ./client test",
+    "test:worker": "pnpm --filter ./worker test",
+    "test:coverage": "pnpm --filter ./worker test:coverage",
+    "typecheck": "pnpm -r typecheck",
+    "typecheck:client": "pnpm --filter ./client typecheck",
+    "typecheck:worker": "pnpm --filter ./worker typecheck"
   },
   "packageManager": "pnpm@10.33.0"
 }
