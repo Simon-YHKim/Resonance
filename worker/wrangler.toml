@@ -3,19 +3,26 @@ main = "src/index.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Phase 1에서 추가:
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "resonance-d1"
-# database_id = "<set by `wrangler d1 create resonance-d1`>"
-#
+# Phase 1 — D1 binding 활성화
+# database_id 는 사용자가 `wrangler d1 create resonance-d1` 후 1회 채움
+# 로컬은 `wrangler d1 migrations apply --local` 로 sqlite 자동 생성
+[[d1_databases]]
+binding = "DB"
+database_name = "resonance-d1"
+database_id = "PLACEHOLDER_RUN_WRANGLER_D1_CREATE"
+migrations_dir = "migrations"
+
+# Phase 1 vars (시크릿은 .dev.vars / wrangler secret put)
+[vars]
+# Phase 1 — 모델 라우팅 키. 시크릿 X (모델 이름만)
+JANSAE_LLM_PRIMARY_MODEL = "claude-haiku-4-5"
+JANSAE_LLM_FALLBACK_MODEL = "mock"
+
+# Phase 2+ 활성화 예정 (현재 주석)
 # [[kv_namespaces]]
 # binding = "KV_NICKNAMES"
-# id = "<set by `wrangler kv:namespace create RESONANCE_NICKNAMES`>"
-#
-# [vars]
-# # AI_GATEWAY_URL = "https://gateway.ai.cloudflare.com/v1/<account>/<gateway>/anthropic"
+# id = "<wrangler kv:namespace create RESONANCE_NICKNAMES>"
 #
 # [[durable_objects.bindings]]
-# # name = "COMBAT_ROOM"
-# # class_name = "CombatRoom"
+# name = "COMBAT_ROOM"
+# class_name = "CombatRoom"
