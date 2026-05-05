@@ -1,11 +1,11 @@
 /**
- * 닉네임 분석 — Anthropic Haiku 4.5 (primary) + Mock fallback.
+ * 닉네임 분석 — primary 모델 라우팅 (Anthropic Haiku 4.5 / Gemini Flash-Lite) + Mock fallback.
  *
  * 옵션 1-C: D1 로컬 + Mock LLM 으로 빌드, 사용자 키 발급 후 1회 검증.
- * 옵션 3-A: Haiku 만. Sonnet/Flash-Lite 라우팅은 Phase 3 길거리 몹에서.
+ * 옵션 3-B: Haiku + Gemini 듀얼 (env.JANSAE_LLM_PRIMARY_MODEL 로 선택)
  *
  * paid-api-guard:
- *   - API 키는 env.ANTHROPIC_API_KEY (.dev.vars / wrangler secret put)
+ *   - API 키는 env.ANTHROPIC_API_KEY / env.GEMINI_API_KEY (.dev.vars / wrangler secret put)
  *   - 미설정 시 자동 Mock fallback (로컬 개발 친화)
  *   - LLM 응답 JSON 파싱 + Zod 검증 (악성 응답 차단)
  *
@@ -18,6 +18,7 @@ import {
   NicknameAnalysisSchema,
   NicknameCategory,
 } from '@resonance/shared';
+import { analyzeWithGemini } from './gemini-analyzer';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 시스템 프롬프트 (시스템 명세 v1.4 §2.1.1 그대로)
@@ -204,7 +205,7 @@ export function mockAnalyze(nickname: string): NicknameAnalysis {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 실 LLM 호출 (Anthropic Haiku 4.5)
+// 실 LLM 호출 (Anthropic Haiku 4.5 + Gemini Flash-Lite 라우팅)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface AnalyzeOptions {
@@ -212,6 +213,8 @@ export interface AnalyzeOptions {
   forceMock?: boolean;
   /** Anthropic SDK 인스턴스 주입 (테스트 friendly) */
   anthropic?: Anthropic;
+  /** Gemini fetch 주입 (테스트 friendly) */
+  geminiFetch?: typeof fetch;
 }
 
 export interface AnalyzeResult {
@@ -230,25 +233,47 @@ function calcHaikuCost(input: number, output: number): number {
   return (input * HAIKU_INPUT_USD_PER_M + output * HAIKU_OUTPUT_USD_PER_M) / 1_000_000;
 }
 
+/** 모델명에서 provider 추론 (라우팅 시그널) */
+function detectProvider(modelName?: string): 'anthropic' | 'gemini' | 'mock' {
+  if (!modelName || modelName === 'mock') return 'mock';
+  if (modelName.startsWith('gemini-')) return 'gemini';
+  if (modelName.startsWith('claude-')) return 'anthropic';
+  return 'anthropic'; // default
+}
+
 /**
- * 닉네임 분석 — primary Haiku, fallback mock.
+ * 닉네임 분석 — primary 모델 라우팅, fallback mock.
+ *
+ * 모델 라우팅 (env.JANSAE_LLM_PRIMARY_MODEL 값에 따라):
+ *   - 'mock'              → mockAnalyze
+ *   - 'gemini-*'          → Gemini Flash-Lite (REST)
+ *   - 'claude-*' (default) → Anthropic Haiku 4.5
+ *
+ * 키 미설정 시 자동 mock fallback (옵션 1-C — 로컬 friendly).
  *
  * @param nickname  사용자 입력
- * @param env       Cloudflare bindings
+ * @param env       Cloudflare bindings (ANTHROPIC_API_KEY / GEMINI_API_KEY 등)
  * @param options   테스트 friendly 주입
  */
 export async function analyzeNickname(
   nickname: unknown,
-  env: { ANTHROPIC_API_KEY?: string; JANSAE_LLM_PRIMARY_MODEL?: string; JANSAE_LLM_FALLBACK_MODEL?: string },
+  env: {
+    ANTHROPIC_API_KEY?: string;
+    GEMINI_API_KEY?: string;
+    JANSAE_LLM_PRIMARY_MODEL?: string;
+    JANSAE_LLM_FALLBACK_MODEL?: string;
+  },
   options: AnalyzeOptions = {},
 ): Promise<AnalyzeResult> {
   const cleaned = validateNickname(nickname);
+  const provider = detectProvider(env.JANSAE_LLM_PRIMARY_MODEL);
 
-  // Mock 분기: 강제 또는 키 없음 또는 fallback이 mock
-  const useMock =
-    options.forceMock === true ||
-    !env.ANTHROPIC_API_KEY ||
-    env.JANSAE_LLM_PRIMARY_MODEL === 'mock';
+  // Mock 분기 우선
+  const apiKeyMissing =
+    (provider === 'anthropic' && !env.ANTHROPIC_API_KEY) ||
+    (provider === 'gemini' && !env.GEMINI_API_KEY);
+
+  const useMock = options.forceMock === true || provider === 'mock' || apiKeyMissing;
 
   if (useMock) {
     return {
@@ -260,10 +285,36 @@ export async function analyzeNickname(
     };
   }
 
-  const client =
-    options.anthropic ??
-    new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+  // Gemini 라우팅
+  if (provider === 'gemini') {
+    try {
+      const r = await analyzeWithGemini(
+        cleaned,
+        NICKNAME_ANALYZER_SYSTEM_PROMPT,
+        env.GEMINI_API_KEY!,
+        {
+          model: env.JANSAE_LLM_PRIMARY_MODEL,
+          fetch: options.geminiFetch,
+        },
+      );
+      return r;
+    } catch (err) {
+      if (env.JANSAE_LLM_FALLBACK_MODEL === 'mock') {
+        return {
+          analysis: mockAnalyze(cleaned),
+          model: 'mock',
+          inputTokens: 0,
+          outputTokens: 0,
+          costUsd: 0,
+        };
+      }
+      if (err instanceof LLMError) throw err;
+      throw new LLMError('Gemini 호출 실패. 잠시 후 다시 시도해주세요.', err);
+    }
+  }
 
+  // Anthropic 라우팅 (default)
+  const client = options.anthropic ?? new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
   const model = env.JANSAE_LLM_PRIMARY_MODEL || 'claude-haiku-4-5';
 
   let response;

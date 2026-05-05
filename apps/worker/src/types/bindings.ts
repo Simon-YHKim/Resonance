@@ -16,4 +16,7 @@ export interface Bindings {
 
   /** Anthropic API key — .dev.vars / wrangler secret put */
   ANTHROPIC_API_KEY?: string;
+
+  /** Google AI Studio API key — .dev.vars / wrangler secret put */
+  GEMINI_API_KEY?: string;
 }

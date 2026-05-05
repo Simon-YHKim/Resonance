@@ -454,3 +454,102 @@ describe('analyzeNickname — Anthropic mock injection', () => {
     expect(r.costUsd).toBeCloseTo(6.0, 2);
   });
 });
+
+describe('analyzeNickname — Gemini 라우팅', () => {
+  const validBody = {
+    nickname: '엄마',
+    category: 'A',
+    추정직업: '주부',
+    추정연령: '40대',
+    추정환경: '집·동네',
+    정서적결: '평이한',
+    주요키워드: ['엄마'],
+    스토리매칭: {
+      보스1자리: '동네 마트',
+      보스1회상: '가족 식탁',
+      보스2자리: '동네 공원',
+      보스3자리: '학원',
+      보스4자리: '초등학교 골목',
+      보스5자리: '회색 운동장',
+    },
+    거점NPC말투: { 차분한가게주인: '수고했어요. 엄마.' },
+    the_Voice_호칭: '엄마',
+  };
+
+  it('JANSAE_LLM_PRIMARY_MODEL=gemini-* + GEMINI_API_KEY 설정 → Gemini 호출', async () => {
+    const fakeGeminiFetch = (await import('vitest')).vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: JSON.stringify(validBody) }] } }],
+          usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 200 },
+        }),
+        { status: 200 },
+      ),
+    );
+    const r = await analyzeNickname(
+      '엄마',
+      {
+        GEMINI_API_KEY: 'fake_gemini',
+        JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { geminiFetch: fakeGeminiFetch as any },
+    );
+    expect(r.model).toBe('gemini-flash-lite-latest');
+    expect(r.inputTokens).toBe(500);
+    expect(r.outputTokens).toBe(200);
+    // ($0.10*500 + $0.40*200) / 1M = (50 + 80) / 1M = 0.00013
+    expect(r.costUsd).toBeCloseTo(0.00013, 8);
+  });
+
+  it('Gemini 모델 + GEMINI_API_KEY 미설정 → mock fallback', async () => {
+    const r = await analyzeNickname('엄마', {
+      JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
+    });
+    expect(r.model).toBe('mock');
+    expect(r.analysis.category).toBe('A'); // mockAnalyze('엄마') = A
+  });
+
+  it('Gemini 호출 실패 + fallback=mock → 자동 mock', async () => {
+    const fakeGeminiFetch = (await import('vitest')).vi.fn(async () =>
+      new Response(JSON.stringify({ error: { message: 'quota exceeded' } }), {
+        status: 429,
+      }),
+    );
+    const r = await analyzeNickname(
+      '엄마',
+      {
+        GEMINI_API_KEY: 'fake_gemini',
+        JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
+        JANSAE_LLM_FALLBACK_MODEL: 'mock',
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      { geminiFetch: fakeGeminiFetch as any },
+    );
+    expect(r.model).toBe('mock');
+  });
+
+  it('Gemini 호출 실패 + fallback 미설정 → LLMError', async () => {
+    const fakeGeminiFetch = (await import('vitest')).vi.fn(async () =>
+      new Response(JSON.stringify({ error: { message: 'auth failed' } }), {
+        status: 401,
+      }),
+    );
+    await expect(
+      analyzeNickname(
+        '엄마',
+        {
+          GEMINI_API_KEY: 'fake_gemini',
+          JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { geminiFetch: fakeGeminiFetch as any },
+      ),
+    ).rejects.toThrow(LLMError);
+  });
+
+  it('JANSAE_LLM_PRIMARY_MODEL 미설정 → Anthropic default (mock fallback)', async () => {
+    const r = await analyzeNickname('엄마', {});
+    expect(r.model).toBe('mock');
+  });
+});
