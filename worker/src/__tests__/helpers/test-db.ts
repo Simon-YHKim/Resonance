@@ -1,0 +1,129 @@
+/**
+ * 테스트용 in-memory D1 — sql.js or 단순 Map.
+ *
+ * Phase 1 단순화: better-sqlite3 / wrangler dev 의존 없이
+ * 핵심 쿼리 (user_wiki·llm_usage_log·users) 흉내내는 stub.
+ *
+ * Day 4 E2E 시나리오용. Phase 2+ 에서 실제 D1 통합 테스트 (wrangler test) 도입.
+ */
+
+interface Tables {
+  users: Map<string, any>;
+  user_wiki: Map<string, any>;
+  llm_usage_log: any[];
+}
+
+export interface TestD1 extends D1Database {
+  __tables: Tables;
+}
+
+/**
+ * 매우 단순한 D1 stub.
+ * D1.prepare(sql).bind(...).run()/.first() 모양만 흉내.
+ *
+ * 실 마이그레이션 적용은 X (pure JS Map). 칼럼 매칭은 SQL prefix 검사.
+ */
+export function createTestD1(): TestD1 {
+  const tables: Tables = {
+    users: new Map(),
+    user_wiki: new Map(),
+    llm_usage_log: [],
+  };
+
+  function makePreparedStatement(sql: string) {
+    let bindings: any[] = [];
+    const stmt = {
+      bind(...args: any[]) {
+        bindings = args;
+        return stmt;
+      },
+      async first<T = any>() {
+        const lower = sql.trim().toLowerCase();
+        if (lower.startsWith('select * from user_wiki where user_id = ?')) {
+          return (tables.user_wiki.get(bindings[0]) ?? null) as T | null;
+        }
+        if (lower.startsWith('select * from users where id = ?')) {
+          return (tables.users.get(bindings[0]) ?? null) as T | null;
+        }
+        if (lower.startsWith('select') && lower.includes('llm_usage_log')) {
+          // 일일 토큰 집계 시뮬
+          const userId = bindings[0];
+          const fromMs = bindings[1] ?? 0;
+          const filtered = tables.llm_usage_log.filter(
+            (e) => e.user_id === userId && e.timestamp >= fromMs,
+          );
+          return {
+            tokens: filtered.reduce(
+              (sum, e) => sum + e.input_tokens + e.output_tokens,
+              0,
+            ),
+            calls: filtered.length,
+            cost_usd: filtered.reduce((sum, e) => sum + e.cost_usd, 0),
+          } as T;
+        }
+        return null as T | null;
+      },
+      async run() {
+        const lower = sql.trim().toLowerCase();
+        if (lower.startsWith('insert or ignore into users')) {
+          const [id, , , createdAt, updatedAt] = bindings;
+          if (!tables.users.has(id)) {
+            tables.users.set(id, {
+              id,
+              email: null,
+              display_name: null,
+              created_at: createdAt,
+              updated_at: updatedAt,
+              age_gate_passed: 0,
+            });
+          }
+          return { success: true } as any;
+        }
+        if (lower.startsWith('insert into user_wiki')) {
+          const [userId, json, createdAt, updatedAt] = bindings;
+          // upsert 시뮬
+          tables.user_wiki.set(userId, {
+            user_id: userId,
+            nickname_analysis_json: json,
+            speech_pattern_json: null,
+            frequent_words: null,
+            milestones_json: null,
+            gaehwa_axis: 0,
+            yeojeon_axis: 0,
+            hangno_axis: 0,
+            axis_locked_at: null,
+            context_change_log_json: null,
+            created_at: createdAt,
+            updated_at: updatedAt,
+          });
+          return { success: true } as any;
+        }
+        if (lower.startsWith('insert into llm_usage_log')) {
+          const [userId, model, inTok, outTok, cost, ctx, isPrem, ts] = bindings;
+          tables.llm_usage_log.push({
+            user_id: userId,
+            llm_model: model,
+            input_tokens: inTok,
+            output_tokens: outTok,
+            cost_usd: cost,
+            context: ctx,
+            is_premium: isPrem,
+            timestamp: ts,
+          });
+          return { success: true } as any;
+        }
+        return { success: true } as any;
+      },
+    };
+    return stmt;
+  }
+
+  const db = {
+    prepare(sql: string) {
+      return makePreparedStatement(sql);
+    },
+    __tables: tables,
+  } as unknown as TestD1;
+
+  return db;
+}
