@@ -243,6 +243,64 @@ describe('E2E 시나리오 3 — 닉네임 분석 실패 → fallback', () => {
   });
 });
 
+describe('E2E 시나리오 추가 — Rate Limit (paid-api-guard)', () => {
+  it('5회 분석 후 6회째는 429 RATE_LIMITED', async () => {
+    const DB = createTestD1();
+    const env = {
+      DB,
+      JANSAE_LLM_PRIMARY_MODEL: 'mock',
+      JANSAE_LLM_FALLBACK_MODEL: 'mock',
+    };
+    const { fetch } = makeApp(env);
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-Dev-User-Id': 'user_rl',
+    };
+
+    for (let i = 0; i < 5; i++) {
+      const res = await fetch('/api/character/analyze', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ nickname: `테스트${i}` }),
+      });
+      expect(res.status).toBe(200);
+    }
+    const res6 = await fetch('/api/character/analyze', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ nickname: '테스트6' }),
+    });
+    expect(res6.status).toBe(429);
+    const body: any = await res6.json();
+    expect(body.code).toBe('RATE_LIMITED');
+    expect(body.retry_after_ms).toBeGreaterThan(0);
+  });
+
+  it('다른 사용자는 별개 카운트', async () => {
+    const DB = createTestD1();
+    const env = {
+      DB,
+      JANSAE_LLM_PRIMARY_MODEL: 'mock',
+      JANSAE_LLM_FALLBACK_MODEL: 'mock',
+    };
+    const { fetch } = makeApp(env);
+
+    for (let i = 0; i < 5; i++) {
+      await fetch('/api/character/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Dev-User-Id': 'user_rl_a' },
+        body: JSON.stringify({ nickname: `테스트${i}` }),
+      });
+    }
+    const res = await fetch('/api/character/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Dev-User-Id': 'user_rl_b' },
+      body: JSON.stringify({ nickname: '다른사용자' }),
+    });
+    expect(res.status).toBe(200);
+  });
+});
+
 describe('E2E 시나리오 4 — 토큰 사용량 측정', () => {
   it('LLM 호출 5회 → llm_usage_log 5 entries + 총합 정확', async () => {
     const DB = createTestD1();

@@ -5,10 +5,21 @@ dist/
 .env
 .env.local
 .env.*.local
+.dev.vars
+.dev.vars.local
 .idea/
 .vscode/
 .wrangler/
 *.tsbuildinfo
+
+# Vitest / coverage
+coverage/
+.nyc_output/
+
+# D1 / SQLite local
+*.sqlite
+*.sqlite-journal
+*.db
 
 # Capacitor / Android
 client/android/.gradle/

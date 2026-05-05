@@ -23,6 +23,10 @@ import {
 import { logLLMUsage } from '../lib/usage-logger';
 import { getCurrentUserId, ensureUserExists } from '../middleware/auth';
 import { upsertUserWiki } from '../lib/wiki-store';
+import { checkRateLimit } from '../middleware/rate-limit';
+
+/** paid-api-guard: 사용자당 시간당 닉네임 분석 호출 수 */
+const ANALYZE_RATE_LIMIT_PER_HOUR = 5;
 
 export const characterRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -46,6 +50,20 @@ characterRouter.post('/analyze', async (c) => {
     return c.json(
       { success: false, error: 'JSON body 가 필요합니다.', code: 'INVALID_BODY' },
       400,
+    );
+  }
+
+  // paid-api-guard: rate limit 검사 (시간당 N회)
+  const rl = await checkRateLimit(c.env.DB, userId, 'character_gen', ANALYZE_RATE_LIMIT_PER_HOUR);
+  if (!rl.allowed) {
+    return c.json(
+      {
+        success: false,
+        error: `시간당 ${rl.limit}회까지 가능합니다. 잠시 후 다시 시도해주세요.`,
+        code: 'RATE_LIMITED',
+        retry_after_ms: rl.retryAfterMs,
+      },
+      429,
     );
   }
 

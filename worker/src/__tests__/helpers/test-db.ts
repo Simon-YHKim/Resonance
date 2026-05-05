@@ -46,7 +46,16 @@ export function createTestD1(): TestD1 {
           return (tables.users.get(bindings[0]) ?? null) as T | null;
         }
         if (lower.startsWith('select') && lower.includes('llm_usage_log')) {
-          // 일일 토큰 집계 시뮬
+          // rate-limit: SELECT COUNT(*) FROM llm_usage_log WHERE user_id=? AND context=? AND timestamp>=?
+          if (lower.includes('and context') && bindings.length === 3) {
+            const [userId, ctx, fromMs] = bindings;
+            const filtered = tables.llm_usage_log.filter(
+              (e) =>
+                e.user_id === userId && e.context === ctx && e.timestamp >= fromMs,
+            );
+            return { calls: filtered.length } as T;
+          }
+          // daily 집계: SELECT SUM(...), COUNT(*), SUM(cost_usd) WHERE user_id=? AND timestamp>=?
           const userId = bindings[0];
           const fromMs = bindings[1] ?? 0;
           const filtered = tables.llm_usage_log.filter(
