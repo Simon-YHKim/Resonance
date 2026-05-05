@@ -6,7 +6,7 @@ import {
   InvalidNicknameError,
   LLMError,
 } from '../nickname-analyzer';
-import { NicknameAnalysisSchema } from '../../schemas/nickname-analysis';
+import { NicknameAnalysisSchema } from '@resonance/shared';
 
 describe('validateNickname', () => {
   it('accepts 한글', () => {

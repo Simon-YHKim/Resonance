@@ -17,7 +17,7 @@ import {
   NicknameAnalysis,
   NicknameAnalysisSchema,
   NicknameCategory,
-} from '../schemas/nickname-analysis';
+} from '@resonance/shared';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 시스템 프롬프트 (시스템 명세 v1.4 §2.1.1 그대로)

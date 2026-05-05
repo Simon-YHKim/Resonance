@@ -7,7 +7,7 @@
  * Refs: 잔향_시스템명세_v1.4.md §2.2
  */
 
-import type { NicknameAnalysis } from '../schemas/nickname-analysis';
+import type { NicknameAnalysis } from '@resonance/shared';
 
 export interface UserWikiRow {
   user_id: string;

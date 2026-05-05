@@ -11,7 +11,7 @@
  * Refs: 잔향_시스템명세_v1.4.md §2.3.1
  */
 
-import type { NicknameAnalysis } from '../schemas/nickname-analysis';
+import type { NicknameAnalysis } from '@resonance/shared';
 import { getUserWikiRow } from '../lib/wiki-store';
 
 export type DominantAxis = 'gaehwa' | 'yeojeon' | 'hangno' | null;

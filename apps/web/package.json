@@ -1,5 +1,5 @@
 {
-  "name": "@resonance/client",
+  "name": "@resonance/web",
   "version": "0.0.1",
   "private": true,
   "type": "module",

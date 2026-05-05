@@ -3,8 +3,8 @@ import {
   NicknameAnalysisSchema,
   toAlias,
   fromAlias,
-  NicknameAnalysis,
-} from '../nickname-analysis';
+  type NicknameAnalysis,
+} from '../schemas/nickname-analysis';
 
 const sample: NicknameAnalysis = {
   nickname: '회사다니기싫은김대리',
