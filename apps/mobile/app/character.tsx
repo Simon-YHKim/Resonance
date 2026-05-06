@@ -5,6 +5,7 @@
  */
 
 import { router } from 'expo-router';
+import { useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -50,6 +51,25 @@ export default function CharacterScreen() {
       setError(err instanceof ResonanceApiError ? err.message : '잔향이 — 네 말을 잠시 잃었어요.');
     } finally {
       setCombatBusy(false);
+    }
+  };
+
+  const setAnalysis = useGame((s) => s.setAnalysis);
+  const setSafetyHigh = useGame((s) => s.setSafetyHigh);
+  const [rerolling, setRerolling] = useState(false);
+  const reroll = async () => {
+    if (!analysis) return;
+    setError(null);
+    setRerolling(true);
+    try {
+      const res = await api.analyzeNickname(analysis.nickname);
+      const a = res.user_wiki.nickname_analysis;
+      setAnalysis(a, res.user_wiki.nickname_code ?? code);
+      if (a.safety_concern === 'high') setSafetyHigh(true);
+    } catch (err) {
+      setError(err instanceof ResonanceApiError ? err.message : '잔향이 — 다시 듣기 못했어요.');
+    } finally {
+      setRerolling(false);
     }
   };
 
@@ -151,8 +171,11 @@ export default function CharacterScreen() {
       ) : null}
 
       <View className="gap-3">
-        <ActionButton onPress={startCombat} disabled={isCombatBusy}>
+        <ActionButton onPress={startCombat} disabled={isCombatBusy || rerolling}>
           {isCombatBusy ? '잊혀진 자가 일어선다...' : '잊혀진 자에게 다가간다'}
+        </ActionButton>
+        <ActionButton variant="ghost" onPress={reroll} disabled={rerolling || isCombatBusy}>
+          {rerolling ? '잔향이 다시 듣고 있어요...' : '잔향이 한 번 더 — 다시 듣기'}
         </ActionButton>
         <ActionButton
           variant="ghost"

@@ -142,69 +142,71 @@ components:
   schemas:
     NicknameAnalysis:
       description: |
-        wire format 한국어 키 (옵션 4-C).
-        TS 코드 내부는 NicknameAnalysisAlias 영문 alias 사용.
+        Phase 1.7 자유 분석 모드 — wire format 한국어 키 유지.
+
+        category enum 제거 (사람을 알파벳으로 분류 X).
+        분석 부가 필드 (직업·연령·환경·정서·키워드·스토리매칭·NPC말투) 모두 OPTIONAL.
+        필수 3필드: the_Voice_호칭, description, safety_concern.
+
+        safety_concern: 자살예방법 §27조의8 — 'high' 시 1393 안내 모달 트리거.
       type: object
       required:
         - nickname
-        - category
-        - 추정직업
-        - 추정연령
-        - 추정환경
-        - 정서적결
-        - 주요키워드
-        - 스토리매칭
-        - 거점NPC말투
         - the_Voice_호칭
+        - description
+        - safety_concern
       properties:
         nickname:
           type: string
           maxLength: 20
-        category:
+        the_Voice_호칭:
           type: string
-          enum: [A, B, C, D, E, F, G, H]
+          maxLength: 40
+          description: the Voice 가 사용자를 부를 호칭 (1~10자, 시적·정체성)
+          example: "두 세계의 경계인"
+        description:
+          type: string
+          minLength: 1
+          maxLength: 800
+          description: LLM 자유 텍스트 다층 묘사 (200~600자 권장)
+          example: "낮에는 차가운 사무실의 부속품으로, 밤에는 온기를 잃지 않으려는 안식처의 기둥…"
+        safety_concern:
+          type: string
+          enum: [none, high]
           description: |
-            A 가족 호칭 / B 보편 한국 이름 / C 실명 변형 /
-            D 위험 단어 / E 욕설 / F 정치인·종교 / G 타 IP / H 안전 다양
+            자살예방법 §27조의8 안전 트리거.
+            'high' 시 앱이 1393/1388/1577-0199 안내 모달 표시.
+            서버 측 2차 keyword check (LLM false negative 방어) 적용.
         추정직업:
           type: string
-          example: 직장인
+          maxLength: 40
+          example: 사무직 근로자
         추정연령:
           type: string
-          example: 30대
+          maxLength: 20
         추정환경:
           type: string
-          example: 사무실
+          maxLength: 40
         정서적결:
           type: string
-          example: 지친
+          maxLength: 40
         주요키워드:
           type: array
-          items: { type: string }
-          minItems: 1
+          items: { type: string, maxLength: 20 }
           maxItems: 10
         스토리매칭:
           type: object
-          required:
-            - 보스1자리
-            - 보스1회상
-            - 보스2자리
-            - 보스3자리
-            - 보스4자리
-            - 보스5자리
+          description: 5체 보스 자리 (Phase 2 격하 — LLM 자유 채움)
           properties:
-            보스1자리: { type: string, description: "남겨진 거인 (30~40대 직장)" }
-            보스1회상: { type: string }
-            보스2자리: { type: string, description: "흐르는 그림자 (20대 사랑)" }
-            보스3자리: { type: string, description: "미루는 학자 (17~19세 꿈)" }
-            보스4자리: { type: string, description: "떠난 친구들 (8~12세 우정)" }
-            보스5자리: { type: string, description: "원의 아이 (5~7세 첫 자기)" }
+            보스1자리: { type: string, maxLength: 80 }
+            보스1회상: { type: string, maxLength: 120 }
+            보스2자리: { type: string, maxLength: 80 }
+            보스3자리: { type: string, maxLength: 80 }
+            보스4자리: { type: string, maxLength: 80 }
+            보스5자리: { type: string, maxLength: 80 }
         거점NPC말투:
           type: object
-          additionalProperties: { type: string }
-        the_Voice_호칭:
-          type: string
-          example: 김 대리님
+          additionalProperties: { type: string, maxLength: 200 }
 
     AnalyzeSuccess:
       type: object
@@ -215,10 +217,17 @@ components:
           properties:
             user_id: { type: string }
             nickname_analysis: { $ref: '#/components/schemas/NicknameAnalysis' }
+            nickname_code:
+              type: string
+              pattern: '^[2-9A-HJ-NP-Z]{6}$'
+              description: |
+                Phase 1.6 잔향 코드 (6자리 base32, 0/1/I/O 제외 알파벳).
+                analyze 후 자동 발급. 친구 공유로 by-code 조회 가능.
+              example: "5PVCYY"
         meta:
           type: object
           properties:
-            model: { type: string, example: mock }
+            model: { type: string, example: gemini-flash-lite-latest }
             input_tokens: { type: integer }
             output_tokens: { type: integer }
             cost_usd: { type: number }

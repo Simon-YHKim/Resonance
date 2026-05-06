@@ -550,10 +550,34 @@ export const MOBILE_HTML = `<!doctype html>
         '<div class="voice-secondary">잊혀진 자가 일어선다. 가까이 가볼래?</div>' +
       '</div>' +
       '<button id="enter-combat" type="button">잊혀진 자에게 다가간다</button>' +
-      '<button class="ghost" id="reset-from-character" type="button">← 다른 닉네임 시도</button>';
+      '<button class="ghost" id="reroll-analysis" type="button">잔향이 한 번 더 — 다시 듣기</button>' +
+      '<button class="ghost" id="reset-from-character" type="button">← 다른 이름으로, 다시 거리에</button>';
 
     document.getElementById('enter-combat').addEventListener('click', startCombat);
     document.getElementById('reset-from-character').addEventListener('click', resetAll);
+    var $reroll = document.getElementById('reroll-analysis');
+    if ($reroll) {
+      $reroll.addEventListener('click', function () {
+        var nick = state.analysis && state.analysis.nickname;
+        if (!nick) return;
+        clearError();
+        setLoading(true, '잔향이 다시 듣고 있어요');
+        api('/api/character/analyze', { nickname: nick }).then(function (r) {
+          setLoading(false);
+          if (!r.res.ok || !r.body.success) {
+            showError('재분석 실패: ' + (r.body && r.body.error ? r.body.error : r.res.status));
+            return;
+          }
+          state.analysis = r.body.user_wiki.nickname_analysis;
+          state.nicknameCode = r.body.user_wiki.nickname_code || state.nicknameCode;
+          if (state.analysis && state.analysis.safety_concern === 'high') showSafetyModal();
+          renderCharacter();
+        }).catch(function (err) {
+          setLoading(false);
+          showError('잔향이 — 다시 듣지 못했어요: ' + err.message);
+        });
+      });
+    }
     var $copyBtn = document.getElementById('copy-code');
     if ($copyBtn) {
       $copyBtn.addEventListener('click', function () {

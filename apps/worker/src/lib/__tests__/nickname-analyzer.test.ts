@@ -66,16 +66,16 @@ describe('mockAnalyze', () => {
     expect(r.safety_concern).toBe('none');
   });
 
-  it('자해·자살 어휘 → safety_concern=high', () => {
-    const r1 = mockAnalyze('자살하고싶다');
-    expect(r1.safety_concern).toBe('high');
-    const r2 = mockAnalyze('죽고싶어');
-    expect(r2.safety_concern).toBe('high');
+  it('자해·자살 어휘 닉네임 → 입력단 reject (자살예방법 §27조의8)', () => {
+    // Phase 1.7.1: 신고채널 운영 회피 — 위험 어휘 자체를 reject
+    expect(() => mockAnalyze('자살하고싶다')).toThrow(InvalidNicknameError);
+    expect(() => mockAnalyze('죽고싶어')).toThrow(InvalidNicknameError);
   });
 
-  it('우울·체념 어휘 → safety_concern=none (직접 어휘만 high)', () => {
+  it('우울·체념 어휘 → 통과 (직접 어휘만 reject)', () => {
     const r = mockAnalyze('지친하루');
     expect(r.safety_concern).toBe('none');
+    expect(r.nickname).toBe('지친하루');
   });
 
   it('빈 닉네임 → InvalidNicknameError', () => {
@@ -151,18 +151,35 @@ describe('analyzeNickname — Anthropic mock injection', () => {
     expect(r.costUsd).toBeGreaterThan(0);
   });
 
-  it('safety_concern=high 응답 통과', async () => {
+  it('safety_concern=high 응답 — 서버 측 2차 keyword check', async () => {
+    // 닉네임 "버림받은밤" 은 입력 reject 통과 (직접 어휘 X). LLM이 'high' 반환 시 그대로 유지.
     const fakeResponse = {
-      nickname: '죽고싶은하루',
-      the_Voice_호칭: '하루의 너',
+      nickname: '버림받은밤',
+      the_Voice_호칭: '버림받은 너',
       description: '빛이 사라진 거리.',
       safety_concern: 'high',
     };
     const r = await analyzeNickname(
-      '죽고싶은하루',
+      '버림받은밤',
       { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
       { anthropic: makeAnthropicMock(fakeResponse) },
     );
+    expect(r.analysis.safety_concern).toBe('high');
+  });
+
+  it('LLM이 \'none\' 반환했어도 description 위험 어휘 시 서버 강제 \'high\'', async () => {
+    const fakeResponse = {
+      nickname: '바람',
+      the_Voice_호칭: '바람의 너',
+      description: '죽고싶다는 결이 흐른다.', // 위험 어휘 description
+      safety_concern: 'none', // LLM은 'none' 반환
+    };
+    const r = await analyzeNickname(
+      '바람',
+      { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
+      { anthropic: makeAnthropicMock(fakeResponse) },
+    );
+    // 서버 측 2차 check 가 강제 'high'
     expect(r.analysis.safety_concern).toBe('high');
   });
 

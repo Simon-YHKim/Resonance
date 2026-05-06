@@ -20,7 +20,7 @@ import {
 } from '../lib/combat';
 import { logLLMUsage } from '../lib/usage-logger';
 import { getCurrentUserId } from '../middleware/auth';
-import { LLMError } from '../lib/nickname-analyzer';
+import { LLMError, detectSafetyConcern } from '../lib/nickname-analyzer';
 import { checkRateLimit } from '../middleware/rate-limit';
 import { checkBudget, parseBudget } from '../lib/budget-guard';
 
@@ -70,6 +70,19 @@ combatRouter.post('/turn', async (c) => {
     );
   }
   const { state, action, userText } = parsed.data;
+
+  // 자살예방법 §27조의8 — userText 입력단 차단 (LLM 도달 X, 신고채널 운영 회피)
+  if (userText && detectSafetyConcern(userText) === 'high') {
+    return c.json(
+      {
+        success: false,
+        error: '잔향이 한 번 멈춥니다. 다른 말로 — 너의 결을 들려주시겠어요?',
+        code: 'INPUT_BLOCKED_SAFETY',
+        safety_concern: 'high',
+      },
+      400,
+    );
+  }
 
   if (state.turn >= TURN_LIMIT) {
     return c.json(

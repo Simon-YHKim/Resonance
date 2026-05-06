@@ -84,7 +84,7 @@ export class LLMError extends Error {
   }
 }
 
-/** 닉네임 1차 검증 — 길이·문자 종류. 카테고리 분류는 LLM. */
+/** 닉네임 1차 검증 — 길이·문자 종류·위험 어휘 (자살예방법 §27조의8 입력단 차단). */
 export function validateNickname(nickname: unknown): string {
   if (typeof nickname !== 'string') {
     throw new InvalidNicknameError('닉네임은 문자열이어야 합니다.');
@@ -96,6 +96,13 @@ export function validateNickname(nickname: unknown): string {
   // 한글·영문·숫자·일부 공백 허용. 제어문자·이모지 차단.
   if (!/^[\p{Script=Hangul}\p{Script=Latin}\p{Number} _\-]+$/u.test(trimmed)) {
     throw new InvalidNicknameError('닉네임은 한글·영문·숫자·공백·언더스코어·하이픈만 허용됩니다.');
+  }
+  // 자살예방법 §27조의8 — 입력단에서 위험 어휘 차단 (LLM에 도달 X)
+  // 신고채널 운영 의무를 입력 reject 로 회피.
+  if (detectSafetyConcern(trimmed) === 'high') {
+    throw new InvalidNicknameError(
+      '잔향이 한 번 멈춥니다. 다른 이름으로 — 너의 결을 들려주시겠어요?',
+    );
   }
   return trimmed;
 }
