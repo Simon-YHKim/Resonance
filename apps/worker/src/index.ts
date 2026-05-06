@@ -12,6 +12,7 @@
 import { Hono } from 'hono';
 import type { Bindings } from './types/bindings';
 import { characterRouter } from './routes/character';
+import { combatRouter } from './routes/combat';
 import { MOBILE_HTML } from './ui/mobile-html';
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -34,11 +35,14 @@ app.get('/api/health', (c) =>
       'GET /api/health',
       'POST /api/character/analyze',
       'GET /api/character/wiki',
+      'POST /api/combat/start',
+      'POST /api/combat/turn',
     ],
   }),
 );
 
 app.route('/api/character', characterRouter);
+app.route('/api/combat', combatRouter);
 
 app.notFound((c) => c.json({ error: 'not_found' }, 404));
 
