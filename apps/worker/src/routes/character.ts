@@ -243,12 +243,14 @@ characterRouter.get('/by-code/:code', async (c) => {
     );
   }
   const analysis = JSON.parse(found.nickname_analysis_json);
+  // 자유 분석 모드 — 공개 필드만 노출. safety_concern 은 보호 (코드로 다른 사람 위험 노출 X)
   return c.json({
     success: true,
     code,
     nickname_analysis: {
       nickname: analysis.nickname,
-      category: analysis.category,
+      the_Voice_호칭: analysis.the_Voice_호칭,
+      description: analysis.description,
       추정직업: analysis.추정직업,
       추정연령: analysis.추정연령,
       정서적결: analysis.정서적결,
