@@ -78,29 +78,28 @@ combatRouter.post('/turn', async (c) => {
     );
   }
 
-  // paid-api-guard: rate limit (시간당 N턴) — 익명 사용자는 통과 (D1 user FK 없음)
-  if (userId !== 'anonymous') {
-    const rl = await checkRateLimit(c.env.DB, userId, 'battle', COMBAT_RATE_LIMIT_PER_HOUR);
-    if (!rl.allowed) {
-      return c.json(
-        {
-          success: false,
-          error: `시간당 ${rl.limit}턴까지 가능합니다. 잠시 후 다시 시도해주세요.`,
-          code: 'RATE_LIMITED',
-          retry_after_ms: rl.retryAfterMs,
-        },
-        429,
-      );
-    }
+  // paid-api-guard: rate limit (시간당 N턴)
+  // 익명 사용자도 IP 기반 rate limit (헤더 우회 방어)
+  const ip =
+    c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'anonymous';
+  const rateLimitKey = userId !== 'anonymous' ? userId : `ip:${ip}`;
+  const rl = await checkRateLimit(c.env.DB, rateLimitKey, 'battle', COMBAT_RATE_LIMIT_PER_HOUR);
+  if (!rl.allowed) {
+    return c.json(
+      {
+        success: false,
+        error: `시간당 ${rl.limit}턴까지 가능합니다. 잠시 후 다시 시도해주세요.`,
+        code: 'RATE_LIMITED',
+        retry_after_ms: rl.retryAfterMs,
+      },
+      429,
+    );
   }
 
-  // paid-api-guard: 일일 비용 캡 — 초과 시 mock 강제
+  // paid-api-guard: 일일 비용 캡 — 사용자/IP 기반 (헤더 위조 방어)
   const userBudget = parseBudget(c.env.USER_DAILY_BUDGET_USD, 0.1);
   const globalBudget = parseBudget(c.env.DAILY_BUDGET_USD, 1.0);
-  const budget =
-    userId !== 'anonymous'
-      ? await checkBudget(c.env.DB, userId, userBudget, globalBudget)
-      : ({ withinBudget: true } as { withinBudget: boolean; reason?: 'user_cap' | 'global_cap' });
+  const budget = await checkBudget(c.env.DB, rateLimitKey, userBudget, globalBudget);
 
   // Gemini 호출 (또는 mock)
   const useMock =
@@ -116,24 +115,25 @@ combatRouter.post('/turn', async (c) => {
 
   try {
     if (useMock) {
-      result = combatTurnMock(state, action);
+      result = combatTurnMock(state, action, userText);
     } else {
-      result = await combatTurnWithGemini(
+      const call = await combatTurnWithGemini(
         state,
         action,
         userText,
         c.env.GEMINI_API_KEY!,
         { model: c.env.JANSAE_LLM_PRIMARY_MODEL },
       );
-      // Gemini 호출 비용 — 대략 추정 (실 토큰은 별도 추적 X, 평균값)
+      result = call.result;
       model = c.env.JANSAE_LLM_PRIMARY_MODEL ?? 'gemini-flash-lite-latest';
-      inputTokens = 400;
-      outputTokens = 200;
-      costUsd = (400 * 0.1 + 200 * 0.4) / 1_000_000;
+      inputTokens = call.inputTokens;
+      outputTokens = call.outputTokens;
+      // Gemini Flash-Lite: $0.10 / $0.40 per 1M tokens
+      costUsd = (inputTokens * 0.1 + outputTokens * 0.4) / 1_000_000;
     }
   } catch (err) {
     if (c.env.JANSAE_LLM_FALLBACK_MODEL === 'mock') {
-      result = combatTurnMock(state, action);
+      result = combatTurnMock(state, action, userText);
     } else {
       if (err instanceof LLMError) {
         return c.json(

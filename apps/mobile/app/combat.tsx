@@ -9,6 +9,8 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   Text,
   TextInput,
@@ -37,7 +39,7 @@ export default function CombatScreen() {
   if (!combat) {
     return (
       <View className="flex-1 bg-bg-primary items-center justify-center px-6">
-        <Text className="text-fg-muted mb-3">전투가 비어있다.</Text>
+        <Text className="text-fg-muted mb-3">거리가 — 아직 일어나지 않았다.</Text>
         <ActionButton variant="ghost" onPress={() => router.replace('/')}>
           처음으로
         </ActionButton>
@@ -62,7 +64,7 @@ export default function CombatScreen() {
         setUserText('');
       }
     } catch (err) {
-      setError(err instanceof ResonanceApiError ? err.message : '네트워크 오류');
+      setError(err instanceof ResonanceApiError ? err.message : '잔향이 — 한 박자 늦게 도착해요.');
     } finally {
       setBusy(false);
     }
@@ -72,7 +74,12 @@ export default function CombatScreen() {
   const playerHpPct = Math.max(0, Math.min(100, (combat.player.hp / combat.player.maxHp) * 100));
 
   return (
-    <ScrollView className="flex-1 bg-bg-primary" contentContainerStyle={{ padding: 24, paddingTop: 48 }}>
+    <KeyboardAvoidingView
+      className="flex-1 bg-bg-primary"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+    <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingTop: 48 }} keyboardShouldPersistTaps="handled">
       {/* 적 정보 */}
       <View className="mb-4 border border-fg-dim/20 rounded-lg p-4">
         <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-1">
@@ -168,5 +175,6 @@ export default function CombatScreen() {
 
       <SafetyModal />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

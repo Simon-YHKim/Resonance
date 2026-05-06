@@ -31,9 +31,9 @@ export default function CharacterScreen() {
   if (!analysis) {
     return (
       <View className="flex-1 bg-bg-primary items-center justify-center px-6">
-        <Text className="text-fg-muted">잔향이 비어있다. 처음으로.</Text>
+        <Text className="text-fg-muted mb-3">잔향이 — 너를 아직 듣지 못했다.</Text>
         <ActionButton variant="ghost" onPress={() => router.replace('/')}>
-          처음으로
+          이름부터, 다시
         </ActionButton>
       </View>
     );
@@ -47,7 +47,7 @@ export default function CharacterScreen() {
       setCombat(res.state);
       router.push('/combat');
     } catch (err) {
-      setError(err instanceof ResonanceApiError ? err.message : '네트워크 오류');
+      setError(err instanceof ResonanceApiError ? err.message : '잔향이 — 네 말을 잠시 잃었어요.');
     } finally {
       setCombatBusy(false);
     }
@@ -161,7 +161,7 @@ export default function CharacterScreen() {
             router.replace('/');
           }}
         >
-          ← 다른 닉네임 시도
+          ← 다른 이름으로, 다시 거리에
         </ActionButton>
       </View>
 

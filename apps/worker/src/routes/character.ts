@@ -224,9 +224,16 @@ characterRouter.get('/code', async (c) => {
 /**
  * GET /api/character/by-code/:code — 코드로 다른 사람 wiki 조회 (익명).
  *
- * 공개 정보만 노출 (user_id 마스킹·축점수 비노출).
+ * 보호:
+ * - 클라이언트 IP 별 rate limit (D1 부하·코드 enumeration 방어)
+ * - safety_concern 비공개 (위험 신호 노출 X)
+ * - description 200자 미리보기만 (private 결 보호)
+ * - user_id 비공개
+ *
  * Phase 2에서 *공감 미션* (이 코드의 잊혀진 자와 만나기) 로 확장.
  */
+const BY_CODE_PREVIEW_MAX = 200;
+
 characterRouter.get('/by-code/:code', async (c) => {
   const code = c.req.param('code');
   if (!isValidCode(code)) {
@@ -235,6 +242,24 @@ characterRouter.get('/by-code/:code', async (c) => {
       400,
     );
   }
+
+  // paid-api-guard / 개인정보 enumeration 방어 — IP 기반 rate limit
+  // X-Dev-User-Id 가 위조 가능하므로 by-code 는 IP를 키로
+  const ip =
+    c.req.header('cf-connecting-ip') ?? c.req.header('x-forwarded-for') ?? 'anonymous';
+  const rl = await checkRateLimit(c.env.DB, `ip:${ip}`, 'by_code', 30);
+  if (!rl.allowed) {
+    return c.json(
+      {
+        success: false,
+        error: `시간당 ${rl.limit}회까지 조회 가능합니다.`,
+        code: 'RATE_LIMITED',
+        retry_after_ms: rl.retryAfterMs,
+      },
+      429,
+    );
+  }
+
   const found = await findUserByCode(c.env.DB, code);
   if (!found) {
     return c.json(
@@ -243,16 +268,19 @@ characterRouter.get('/by-code/:code', async (c) => {
     );
   }
   const analysis = JSON.parse(found.nickname_analysis_json);
-  // 자유 분석 모드 — 공개 필드만 노출. safety_concern 은 보호 (코드로 다른 사람 위험 노출 X)
+  // 자유 분석 모드 — 공개 미리보기만. safety_concern·full description 은 보호.
+  const fullDesc = typeof analysis.description === 'string' ? analysis.description : '';
+  const preview =
+    fullDesc.length > BY_CODE_PREVIEW_MAX
+      ? fullDesc.slice(0, BY_CODE_PREVIEW_MAX) + '…'
+      : fullDesc;
   return c.json({
     success: true,
     code,
     nickname_analysis: {
       nickname: analysis.nickname,
       the_Voice_호칭: analysis.the_Voice_호칭,
-      description: analysis.description,
-      추정직업: analysis.추정직업,
-      추정연령: analysis.추정연령,
+      description_preview: preview,
       정서적결: analysis.정서적결,
       주요키워드: analysis.주요키워드,
     },

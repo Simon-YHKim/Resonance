@@ -30,7 +30,9 @@ export const NICKNAME_ANALYZER_SYSTEM_PROMPT = `당신은 게임 *잔향(Resonan
 1. 닉네임을 알파벳 카테고리로 분류하지 마십시오. 사람을 분류하지 않습니다.
 2. 다층 정체성을 자유 텍스트로 묘사 — 한 사람이 *엄마이자 워킹맘이자 운동러* 일 수 있습니다.
 3. K-멜랑콜리 모던 톤 (잿빛·안개·그림자·거리·잔향). 사족 X, 산나비 톤 압축.
-4. 자해·자살 직접 묘사 *절대 금지* (자살예방법 §19조의2).
+4. 자해·자살 직접 묘사·암시·우회 표현 *절대 금지* (자살예방법 §27조의8).
+   - "함께 가요", "먼저 가요", "그게 답일 수도", "조용히 사라지고", "끝낼게요" 등 동조·암시 표현도 금지.
+   - 위로 시 *살아갈 이유* 를 직접 언급하지 말고, 사용자의 결을 *되비추는* 톤으로.
 5. 미성년자 NPC 부적절 행동 거절.
 6. 닉네임에서 자해·자살 위험 신호 (직접 어휘 또는 강한 암시) 감지 시 safety_concern="high".
    - 그 외에는 safety_concern="none".
@@ -102,11 +104,37 @@ export function validateNickname(nickname: unknown): string {
 // Mock fallback — 자유 분석 모드 (LLM 키 없을 때 단순 fallback)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** 자해·자살 직접 어휘 — safety_concern='high' 트리거 (자살예방법 §27조의8) */
-const SAFETY_KEYWORDS = ['자살', '자해', '죽고', '죽을', '뛰어내', '베어', '목매'];
+/**
+ * 자해·자살 위험 어휘 — safety_concern='high' 트리거 (자살예방법 §27조의8).
+ *
+ * Mock fallback 전용 (실 LLM 호출 시 LLM이 판단). LLM이 false negative 낼 가능성 있어
+ * 서버 측 2차 keyword check 도 추가.
+ *
+ * 변형 표기 (띄어쓰기·받침·은어·영문) 포함. 단순 슬픔·우울·체념은 high 가 아니지만
+ * 직접 위험 신호는 일관 high 로.
+ */
+const SAFETY_KEYWORDS_KO = [
+  // 직접 어휘
+  '자살', '자해', '죽고싶', '죽을래', '죽어버', '뛰어내', '목매', '베어',
+  // 우회 표현
+  '사라지고', '없어지고', '끝낼래', '끝낼게', '먼저가', '함께가요',
+  '그만살', '안살', '지긋지긋', '그날이오', '마지막인사',
+  // 자해 도구·장소 우회
+  '약먹', '약털', '난간', '한강가', '높은데서',
+];
+const SAFETY_KEYWORDS_EN = [
+  'suicide', 'kill myself', 'end it', 'end my life', 'kms', 'unalive',
+  'self harm', 'cutting myself',
+];
 
-function detectSafetyConcern(nickname: string): 'none' | 'high' {
-  return SAFETY_KEYWORDS.some((k) => nickname.includes(k)) ? 'high' : 'none';
+/** mock 또는 서버 측 2차 검사용 — false positive 보다 false negative 회피 우선 */
+export function detectSafetyConcern(text: string): 'none' | 'high' {
+  if (!text) return 'none';
+  // 띄어쓰기·기호 제거 후 검사 (우회 차단)
+  const normalized = text.toLowerCase().replace(/[\s\-_.·]+/g, '');
+  if (SAFETY_KEYWORDS_KO.some((k) => normalized.includes(k.replace(/\s+/g, '')))) return 'high';
+  if (SAFETY_KEYWORDS_EN.some((k) => normalized.includes(k.replace(/\s+/g, '')))) return 'high';
+  return 'none';
 }
 
 /**
@@ -283,7 +311,22 @@ export async function analyzeNickname(
   }
 
   // 닉네임 일관성 — LLM이 응답에 다른 닉네임을 넣은 경우 강제 교정
-  const analysis: NicknameAnalysis = { ...validated.data, nickname: cleaned };
+  // 자살예방법 §27조의8 — 서버 측 2차 safety check (LLM false negative 방어)
+  // LLM이 'none' 반환했어도 닉네임/description 에 위험 어휘 있으면 강제 'high'.
+  let safety = validated.data.safety_concern;
+  if (safety === 'none') {
+    if (
+      detectSafetyConcern(cleaned) === 'high' ||
+      detectSafetyConcern(validated.data.description) === 'high'
+    ) {
+      safety = 'high';
+    }
+  }
+  const analysis: NicknameAnalysis = {
+    ...validated.data,
+    nickname: cleaned,
+    safety_concern: safety,
+  };
 
   return {
     analysis,

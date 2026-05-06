@@ -48,7 +48,7 @@ export default function NicknameScreen() {
           setError(err.message);
         }
       } else {
-        setError('네트워크 오류가 발생했습니다.');
+        setError('잔향이 — 네 말을 잠시 잃었어요. 다시 한 번.');
       }
     } finally {
       setAnalyzing(false);

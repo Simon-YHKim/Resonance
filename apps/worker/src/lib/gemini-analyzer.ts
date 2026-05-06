@@ -14,7 +14,7 @@ import {
   NicknameAnalysisSchema,
   type NicknameAnalysis,
 } from '@resonance/shared';
-import { LLMError } from './nickname-analyzer';
+import { LLMError, detectSafetyConcern } from './nickname-analyzer';
 
 // 가격 (per 1M tokens, USD) — 2026.05 시안. Gemini 2.5 Flash-Lite.
 const GEMINI_INPUT_USD_PER_M = 0.1;
@@ -94,9 +94,11 @@ export async function analyzeWithGemini(
           maxOutputTokens: 1024,
         },
       }),
+      // Workers CPU time 50ms 방어 — 15초 후 abort
+      signal: AbortSignal.timeout(15000),
     });
   } catch (err) {
-    throw new LLMError('Gemini 호출 네트워크 오류', err);
+    throw new LLMError('Gemini 호출 네트워크 오류 (timeout 가능)', err);
   }
 
   let body: GenerateContentResponse;
@@ -131,7 +133,21 @@ export async function analyzeWithGemini(
   }
 
   // 닉네임 강제 교정 (LLM 응답이 다를 수 있음)
-  const analysis: NicknameAnalysis = { ...validated.data, nickname: cleaned };
+  // 자살예방법 §27조의8 — 서버 측 2차 safety check (LLM false negative 방어)
+  let safety = validated.data.safety_concern;
+  if (safety === 'none') {
+    if (
+      detectSafetyConcern(cleaned) === 'high' ||
+      detectSafetyConcern(validated.data.description) === 'high'
+    ) {
+      safety = 'high';
+    }
+  }
+  const analysis: NicknameAnalysis = {
+    ...validated.data,
+    nickname: cleaned,
+    safety_concern: safety,
+  };
 
   const inputTokens = body.usageMetadata?.promptTokenCount ?? 0;
   const outputTokens = body.usageMetadata?.candidatesTokenCount ?? 0;

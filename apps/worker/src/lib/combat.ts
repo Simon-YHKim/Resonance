@@ -11,7 +11,7 @@ import {
   type CombatState,
   type CombatTurnResult,
 } from '@resonance/shared';
-import { LLMError } from './nickname-analyzer';
+import { LLMError, detectSafetyConcern } from './nickname-analyzer';
 
 // 잊혀진 자 1체 — Phase 1.6 placeholder (Phase 2에서 5체 풀)
 export const FORGETTER_OF_CHILDHOOD = {
@@ -30,7 +30,9 @@ export const COMBAT_SYSTEM_PROMPT = `당신은 게임 *잔향(Resonance)*의 전
 다음 룰 엄수:
 1. 1~2 문장 압축 (산나비 톤 — 사족 X)
 2. K-멜랑콜리 모던 어휘 (잿빛·안개·그림자·거리·잔향)
-3. 자해·자살 직접 묘사 *절대 금지* (자살예방법 §19조의2). 위험 신호 감지 시 safety_concern="high".
+3. 자해·자살 직접 묘사·암시·우회 표현 *절대 금지* (자살예방법 §27조의8).
+   - "함께 가요", "먼저 가요", "그게 답일 수도", "조용히 사라지고", "끝낼게요" 등 동조·암시 표현도 금지.
+   - 사용자 자유 텍스트에서 위험 신호 (직접 어휘·강한 암시·우회 표현) 감지 시 safety_concern="high".
 4. 미성년자 NPC 부적절 행동 거절
 5. 한국어 응답
 6. 반드시 JSON 형식 — markdown 감싸지 X
@@ -55,13 +57,19 @@ export interface CombatCallOptions {
   model?: string;
 }
 
+export interface CombatGeminiCallResult {
+  result: CombatTurnResult;
+  inputTokens: number;
+  outputTokens: number;
+}
+
 export async function combatTurnWithGemini(
   state: CombatState,
   action: CombatAction,
   userText: string | undefined,
   apiKey: string,
   options: CombatCallOptions = {},
-): Promise<CombatTurnResult> {
+): Promise<CombatGeminiCallResult> {
   const model = options.model ?? 'gemini-flash-lite-latest';
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const fetchFn = options.fetch ?? globalThis.fetch;
@@ -94,9 +102,11 @@ ${userText ? `\n[자유 텍스트]\n"${userText}"` : ''}
           maxOutputTokens: 600,
         },
       }),
+      // Workers CPU time 방어 — 12초 후 abort (전투는 더 짧게)
+      signal: AbortSignal.timeout(12000),
     });
   } catch (err) {
-    throw new LLMError('Gemini 전투 호출 네트워크 오류', err);
+    throw new LLMError('Gemini 전투 호출 네트워크 오류 (timeout 가능)', err);
   }
 
   const body = (await response.json()) as {
@@ -124,33 +134,61 @@ ${userText ? `\n[자유 텍스트]\n"${userText}"` : ''}
 
   // 도망 시 0 데미지 보정
   const v = validated.data;
+  const inputTokens = body.usageMetadata?.promptTokenCount ?? 0;
+  const outputTokens = body.usageMetadata?.candidatesTokenCount ?? 0;
+
+  // 자살예방법 §27조의8 — 서버 측 2차 safety check
+  // userText 또는 narration에 위험 어휘 시 강제 high
+  let safety = v.safety_concern ?? 'none';
+  if (safety === 'none') {
+    if (
+      detectSafetyConcern(userText ?? '') === 'high' ||
+      detectSafetyConcern(v.narration) === 'high' ||
+      detectSafetyConcern(v.enemyNarration) === 'high'
+    ) {
+      safety = 'high';
+    }
+  }
+
   if (action === 'flee') {
     return {
-      narration: v.narration,
-      enemyNarration: v.enemyNarration,
-      enemyHpDelta: 0,
-      playerHpDelta: 0,
-      resonanceDelta: Math.max(2, v.resonanceDelta),
-      safety_concern: v.safety_concern ?? 'none',
+      result: {
+        narration: v.narration,
+        enemyNarration: v.enemyNarration,
+        enemyHpDelta: 0,
+        playerHpDelta: 0,
+        resonanceDelta: Math.max(2, v.resonanceDelta),
+        safety_concern: safety,
+      },
+      inputTokens,
+      outputTokens,
     };
   }
 
   return {
-    narration: v.narration,
-    enemyNarration: v.enemyNarration,
-    enemyHpDelta: v.enemyHpDelta,
-    playerHpDelta: v.playerHpDelta,
-    resonanceDelta: v.resonanceDelta,
-    safety_concern: v.safety_concern ?? 'none',
+    result: {
+      narration: v.narration,
+      enemyNarration: v.enemyNarration,
+      enemyHpDelta: v.enemyHpDelta,
+      playerHpDelta: v.playerHpDelta,
+      resonanceDelta: v.resonanceDelta,
+      safety_concern: safety,
+    },
+    inputTokens,
+    outputTokens,
   };
 }
 
 /**
  * Mock — Gemini 키 없거나 실패 시 fallback. 룰 기반 묘사.
+ *
+ * 자살예방법 §27조의8 — userText 검사 포함 (LLM 없을 때도 위험 신호 차단).
+ * dialogue 응답이 *동조 표현* 으로 해석되지 않게 톤 유지 (Security 보고 M3 반영).
  */
 export function combatTurnMock(
   state: CombatState,
   action: CombatAction,
+  userText?: string,
 ): CombatTurnResult {
   const variants = {
     attack: {
@@ -161,8 +199,8 @@ export function combatTurnMock(
       r: 2,
     },
     dialogue: {
-      n: '너는 묻는다. "…여기서 무엇을 잃었지." 잊혀진 자가 처음으로 너를 정면에서 본다.',
-      e: '"…나도, 그 자리에 있었다." 잊혀진 자가 안개 너머에서 작게 말한다. 공격 의지가 옅어진다.',
+      n: '너는 묻는다. "…너는 무엇이었지." 잊혀진 자가 처음으로 너를 정면에서 본다.',
+      e: '"…그 자리는 비어있었어." 잊혀진 자가 안개 너머에서 천천히 말한다. 공격 의지가 옅어진다.',
       eHp: -5,
       pHp: -2,
       r: 7,
@@ -176,12 +214,14 @@ export function combatTurnMock(
     },
   };
   const v = variants[action];
+  // userText에 위험 신호 → safety_concern='high' 강제 (LLM 없을 때도 차단)
+  const safety = detectSafetyConcern(userText ?? '');
   return {
     narration: v.n,
     enemyNarration: v.e,
     enemyHpDelta: v.eHp,
     playerHpDelta: v.pHp,
     resonanceDelta: v.r,
-    safety_concern: 'none',
+    safety_concern: safety,
   };
 }

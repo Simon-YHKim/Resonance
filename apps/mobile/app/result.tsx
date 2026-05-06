@@ -37,7 +37,7 @@ export default function ResultScreen() {
   if (!combat || !outcome) {
     return (
       <View className="flex-1 bg-bg-primary items-center justify-center px-6">
-        <Text className="text-fg-muted mb-3">결말이 비어있다.</Text>
+        <Text className="text-fg-muted mb-3">잔향이 아직 — 머물 자리를 못 찾았다.</Text>
         <ActionButton variant="ghost" onPress={() => router.replace('/')}>
           처음으로
         </ActionButton>

@@ -306,31 +306,27 @@ export const MOBILE_HTML = `<!doctype html>
     <span id="loading-text">잔향이 듣고 있어요</span>
   </div>
 
-  <!-- 안전 모달 (자살예방법 §27조의8) -->
+  <!-- 안전 모달 (자살예방법 §27조의8) — 5초 dwell + 복수 채널 (1393 + 청소년 1388 + 1577-0199) -->
   <div id="safety-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:20px">
-    <div style="max-width:340px;background:var(--bg-elev);border-radius:14px;padding:22px;border:1px solid rgba(255,180,180,0.3)">
+    <div style="max-width:340px;background:var(--bg-elevated);border-radius:14px;padding:22px;border:1px solid rgba(255,180,180,0.3)">
       <div style="font-size:14px;color:var(--fg-muted);margin-bottom:6px">잔향이 한 번 멈추고 너를 본다.</div>
-      <div style="font-size:18px;font-weight:600;color:var(--fg);margin-bottom:14px;line-height:1.4">너의 결을 먼저 듣고 싶어요.</div>
-      <div style="font-size:14px;color:var(--fg);line-height:1.6;margin-bottom:18px">
+      <div style="font-size:18px;font-weight:600;color:var(--fg-primary);margin-bottom:14px;line-height:1.4">너의 결을 먼저 듣고 싶어요.</div>
+      <div style="font-size:14px;color:var(--fg-primary);line-height:1.7;margin-bottom:18px">
         혼자 마주하기 힘든 무게가 있다면<br/>
-        <strong style="font-size:16px">자살예방상담 1393</strong> (24시간 무료)<br/>
-        <span style="color:var(--fg-muted);font-size:12px">— 잔향계 너머의 사람도 너의 잔향을 듣는다.</span>
+        <strong style="font-size:16px">자살예방상담 <a href="tel:1393" style="color:var(--resonance);text-decoration:underline">1393</a></strong> (24시간 무료)<br/>
+        <span style="color:var(--fg-muted);font-size:12px">청소년: <a href="tel:1388" style="color:var(--fg-muted)">1388</a> · 정신건강: <a href="tel:1577-0199" style="color:var(--fg-muted)">1577-0199</a></span><br/>
+        <span style="color:var(--fg-dim);font-size:12px">— 잔향계 너머의 사람도 너의 잔향을 듣는다.</span>
       </div>
       <div style="display:flex;gap:8px">
-        <a href="tel:1393" style="flex:1;text-align:center;padding:12px;background:var(--accent);color:#0F0E14;border-radius:8px;text-decoration:none;font-weight:600">1393 전화하기</a>
-        <button id="safety-close" type="button" class="ghost" style="flex:1;padding:12px">닫기</button>
+        <a href="tel:1393" style="flex:1;text-align:center;padding:12px;background:var(--resonance);color:#0F0E14;border-radius:8px;text-decoration:none;font-weight:600">1393 전화하기</a>
+        <button id="safety-close" type="button" class="ghost" style="flex:1;padding:12px" disabled>닫기</button>
       </div>
     </div>
   </div>
 
   <footer>
     <div class="footer-quote">"잔향이 — 잠시, 머물렀어요."</div>
-    <div>
-      잔향(Resonance) · Phase 1.6 · Gemini Flash-Lite ·
-      <a class="footer-link" href="https://simon-yhkim.github.io/Resonance/" target="_blank" rel="noopener">
-        Phase 0 (Mock) 풀 게임
-      </a>
-    </div>
+    <div>잔향(Resonance) · Phase 1.7 · Gemini Flash-Lite</div>
   </footer>
 
 <script>
@@ -377,13 +373,30 @@ export const MOBILE_HTML = `<!doctype html>
   function clearError() { $error.style.display = 'none'; $error.textContent = ''; }
 
   // 자살예방법 §27조의8 — safety_concern='high' 시 1393 안내 모달
+  // 5초 dwell (X 비활성) + 복수 채널 (1393 / 1388 / 1577-0199)
   function showSafetyModal() {
     var $m = document.getElementById('safety-modal');
     if (!$m) return;
     $m.style.display = 'flex';
     var $close = document.getElementById('safety-close');
     if ($close) {
-      $close.onclick = function () { $m.style.display = 'none'; };
+      $close.disabled = true;
+      $close.textContent = '닫기 (5)';
+      var seconds = 5;
+      var iv = setInterval(function () {
+        seconds--;
+        if (seconds > 0) { $close.textContent = '닫기 (' + seconds + ')'; }
+        else {
+          clearInterval(iv);
+          $close.disabled = false;
+          $close.textContent = '닫기';
+        }
+      }, 1000);
+      $close.onclick = function () {
+        if ($close.disabled) return;
+        clearInterval(iv);
+        $m.style.display = 'none';
+      };
     }
   }
   function setLoading(on, text) {
