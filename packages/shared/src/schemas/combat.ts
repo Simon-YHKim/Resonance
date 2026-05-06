@@ -10,6 +10,31 @@ import { z } from 'zod';
 export const CombatActionSchema = z.enum(['attack', 'dialogue', 'flee']);
 export type CombatAction = z.infer<typeof CombatActionSchema>;
 
+/**
+ * 잔잔(殘殘) 임계 — 누적 잔잔이 깊어질수록 *대화의 결*이 다른 단계로.
+ * descend (0~29) → empathy (30~59) → memory (60~99) → origin (100+)
+ *
+ * Refs: Design+Story agent layer 2 (영혼 4번 *대화 깊이* 분기).
+ */
+export const RESONANCE_TIERS = {
+  empathy: 30,
+  memory: 60,
+  origin: 100,
+} as const;
+export type ResonanceTier = 'descend' | 'empathy' | 'memory' | 'origin';
+export function getResonanceTier(resonance: number): ResonanceTier {
+  if (resonance >= RESONANCE_TIERS.origin) return 'origin';
+  if (resonance >= RESONANCE_TIERS.memory) return 'memory';
+  if (resonance >= RESONANCE_TIERS.empathy) return 'empathy';
+  return 'descend';
+}
+export const RESONANCE_TIER_LABELS: Record<ResonanceTier, string> = {
+  descend: '평이',
+  empathy: '공감 한 마디',
+  memory: '오래된 기억',
+  origin: '원의 답',
+};
+
 export const CombatOutcomeSchema = z.enum(['victory', 'defeat', 'fled', 'stalemate']);
 export type CombatOutcome = z.infer<typeof CombatOutcomeSchema>;
 

@@ -378,6 +378,14 @@ export const MOBILE_HTML = `<!doctype html>
   }
   function clearError() { $error.style.display = 'none'; $error.textContent = ''; }
 
+  // 잔잔(殘殘) 임계 — Design+Story layer 2 (대화 깊이 단계 라벨)
+  function tierLabel(resonance) {
+    if (resonance >= 100) return '원의 답';
+    if (resonance >= 60) return '오래된 기억';
+    if (resonance >= 30) return '공감 한 마디';
+    return '평이';
+  }
+
   // 스테미나 게이지 (Phase 2 BM)
   function buildStaminaBar(s) {
     var pct = Math.max(0, Math.min(100, (s.current / s.max_daily) * 100));
@@ -681,7 +689,7 @@ export const MOBILE_HTML = `<!doctype html>
             '<div class="hp-num">' + c.player.hp + ' / ' + c.player.maxHp + '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="turn-info">턴 ' + (c.turn) + ' / 5 <span class="resonance-pill">잔잔 ' + c.resonance + '</span></div>' +
+        '<div class="turn-info">턴 ' + (c.turn) + ' / 5 <span class="resonance-pill">잔잔 ' + c.resonance + ' · <span style="color:var(--resonance)">' + tierLabel(c.resonance) + '</span></span></div>' +
         '<div style="margin:10px 0 6px">' +
           '<div class="hp-bar-label" style="margin-bottom:4px">자유 텍스트 (선택, 최대 200자)</div>' +
           '<textarea id="user-text" maxlength="200" placeholder="…너에게 한 마디 — 자유롭게.&#10;빈 칸도 OK. 입력하면 잔향이 더 깊게 듣는다."></textarea>' +

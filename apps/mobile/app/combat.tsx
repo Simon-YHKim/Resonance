@@ -17,7 +17,11 @@ import {
   View,
 } from 'react-native';
 import type { CombatAction } from '@resonance/shared';
-import { ResonanceApiError } from '@resonance/shared';
+import {
+  ResonanceApiError,
+  getResonanceTier,
+  RESONANCE_TIER_LABELS,
+} from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
 import { SafetyModal } from '@/components/SafetyModal';
 import { api } from '@/services/api';
@@ -101,7 +105,10 @@ export default function CombatScreen() {
         <View className="flex-row justify-between items-center mb-2">
           <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase">너</Text>
           <Text className="text-fg-dim text-[11px]">
-            턴 {combat.turn + 1} / 5 · 잔잔 {combat.resonance}
+            턴 {combat.turn + 1} / 5 · 잔잔 {combat.resonance} ·{' '}
+            <Text className="text-resonance">
+              {RESONANCE_TIER_LABELS[getResonanceTier(combat.resonance)]}
+            </Text>
           </Text>
         </View>
         <View className="h-1.5 bg-bg-elevated rounded-full overflow-hidden">

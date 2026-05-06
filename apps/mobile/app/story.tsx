@@ -20,7 +20,11 @@ import {
   View,
 } from 'react-native';
 import type { CombatAction, CombatState } from '@resonance/shared';
-import { ResonanceApiError } from '@resonance/shared';
+import {
+  ResonanceApiError,
+  getResonanceTier,
+  RESONANCE_TIER_LABELS,
+} from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
 import { SafetyModal } from '@/components/SafetyModal';
 import { api } from '@/services/api';
@@ -184,7 +188,10 @@ export default function StoryScreen() {
           {/* 잔잔 누적 게이지 (화해 임계 100) */}
           <View className="flex-row justify-between items-baseline mb-1">
             <Text className="text-fg-muted text-[11px]">
-              잔잔 {state.resonance} / {RECONCILE_THRESHOLD} (화해 임계)
+              잔잔 {state.resonance} / {RECONCILE_THRESHOLD} ·{' '}
+              <Text className="text-resonance">
+                {RESONANCE_TIER_LABELS[getResonanceTier(state.resonance)]}
+              </Text>
             </Text>
           </View>
           <View className="h-1.5 bg-bg-elevated rounded-full overflow-hidden">
