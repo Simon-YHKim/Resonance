@@ -94,16 +94,18 @@ export function buildSystemPromptWithWiki(
           ? '여전 (수용형)'
           : '항로 (절충형)';
 
+  const lines: string[] = [`닉네임: ${a.nickname}`, `the Voice 호칭: ${a.the_Voice_호칭}`];
+  if (a.description) lines.push(`결: ${a.description}`);
+  if (a.추정직업) lines.push(`직업: ${a.추정직업}`);
+  if (a.추정연령) lines.push(`연령: ${a.추정연령}`);
+  if (a.추정환경) lines.push(`환경: ${a.추정환경}`);
+  if (a.정서적결) lines.push(`정서: ${a.정서적결}`);
+  if (a.주요키워드 && a.주요키워드.length > 0) lines.push(`주요키워드: ${a.주요키워드.join(', ')}`);
+
   return `${basePrompt}
 
 [사용자 컨텍스트 — 자동 주입]
-닉네임: ${a.nickname}
-직업: ${a.추정직업}
-연령: ${a.추정연령}
-환경: ${a.추정환경}
-정서: ${a.정서적결}
-주요키워드: ${a.주요키워드.join(', ')}
-the Voice 호칭: ${a.the_Voice_호칭}
+${lines.join('\n')}
 
 [최근 이정표]
 ${milestones}

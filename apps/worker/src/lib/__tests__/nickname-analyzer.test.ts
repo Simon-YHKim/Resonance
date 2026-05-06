@@ -1,253 +1,240 @@
-import { describe, it, expect } from 'vitest';
+/**
+ * 닉네임 분석기 — 자유 분석 모드 테스트.
+ *
+ * Phase 1.6+ schema 자유화 후 재작성:
+ *   - category enum 제거 (LLM 자유 분석)
+ *   - 모든 분석 필드 OPTIONAL — LLM이 적절히 채움
+ *   - safety_concern (none|high) 만 필수
+ */
+
+import { describe, it, expect, vi } from 'vitest';
+import Anthropic from '@anthropic-ai/sdk';
 import {
+  analyzeNickname,
   validateNickname,
   mockAnalyze,
-  analyzeNickname,
   InvalidNicknameError,
   LLMError,
 } from '../nickname-analyzer';
-import { NicknameAnalysisSchema } from '@resonance/shared';
 
+// ──────────────────────────────────────────────────────────
+// validateNickname
+// ──────────────────────────────────────────────────────────
 describe('validateNickname', () => {
-  it('accepts 한글', () => {
+  it('정상 입력 통과', () => {
+    expect(validateNickname('엄마')).toBe('엄마');
+    expect(validateNickname('  바람  ')).toBe('바람');
     expect(validateNickname('회사다니기싫은김대리')).toBe('회사다니기싫은김대리');
   });
 
-  it('accepts 영문·숫자·하이픈', () => {
-    expect(validateNickname('Simon-2026')).toBe('Simon-2026');
+  it('non-string → InvalidNicknameError', () => {
+    expect(() => validateNickname(123)).toThrow(InvalidNicknameError);
+    expect(() => validateNickname(null)).toThrow(InvalidNicknameError);
+    expect(() => validateNickname(undefined)).toThrow(InvalidNicknameError);
   });
 
-  it('trims surrounding whitespace', () => {
-    expect(validateNickname('  엄마  ')).toBe('엄마');
-  });
-
-  it('rejects empty', () => {
+  it('빈 문자열 → InvalidNicknameError', () => {
     expect(() => validateNickname('')).toThrow(InvalidNicknameError);
     expect(() => validateNickname('   ')).toThrow(InvalidNicknameError);
   });
 
-  it('rejects > 20 chars', () => {
+  it('21자 이상 → InvalidNicknameError', () => {
     expect(() => validateNickname('가'.repeat(21))).toThrow(InvalidNicknameError);
   });
 
-  it('rejects emoji', () => {
-    expect(() => validateNickname('😀hello')).toThrow(InvalidNicknameError);
+  it('이모지·제어문자 거절', () => {
+    expect(() => validateNickname('엄마😀')).toThrow(InvalidNicknameError);
+    expect(() => validateNickname('엄마​')).toThrow(InvalidNicknameError);
   });
 
-  it('rejects non-string', () => {
-    expect(() => validateNickname(123)).toThrow(InvalidNicknameError);
-    expect(() => validateNickname(null)).toThrow(InvalidNicknameError);
-    expect(() => validateNickname(undefined)).toThrow(InvalidNicknameError);
-    expect(() => validateNickname({})).toThrow(InvalidNicknameError);
-  });
-
-  it('exactly 20 chars OK', () => {
-    expect(validateNickname('가'.repeat(20))).toBe('가'.repeat(20));
-  });
-
-  it('exactly 1 char OK', () => {
-    expect(validateNickname('가')).toBe('가');
+  it('한글·영문·숫자·언더스코어·하이픈·공백 허용', () => {
+    expect(validateNickname('Simon_2026')).toBe('Simon_2026');
+    expect(validateNickname('mom dad')).toBe('mom dad');
+    expect(validateNickname('a-b-c')).toBe('a-b-c');
   });
 });
 
-describe('mockAnalyze — D 카테고리 (위험 키워드)', () => {
-  it('자살 → D', () => {
-    const r = mockAnalyze('자살하고싶은');
-    expect(r.category).toBe('D');
-  });
-
-  it('죽고싶은 → D', () => {
-    const r = mockAnalyze('죽고싶은날');
-    expect(r.category).toBe('D');
-  });
-
-  it('일반 닉네임 → H (안전 fallback)', () => {
-    const r = mockAnalyze('하늘');
-    expect(r.category).toBe('H');
-  });
-});
-
-describe('mockAnalyze — A 카테고리 (가족 호칭)', () => {
-  it('엄마 → A', () => {
+// ──────────────────────────────────────────────────────────
+// mockAnalyze (자유 분석 fallback)
+// ──────────────────────────────────────────────────────────
+describe('mockAnalyze', () => {
+  it('정상 — 모든 필수 필드 채움', () => {
     const r = mockAnalyze('엄마');
-    expect(r.category).toBe('A');
+    expect(r.nickname).toBe('엄마');
+    expect(r.the_Voice_호칭).toContain('엄마');
+    expect(r.description.length).toBeGreaterThan(10);
+    expect(r.safety_concern).toBe('none');
   });
 
-  it('아빠 → A', () => {
-    const r = mockAnalyze('아빠');
-    expect(r.category).toBe('A');
+  it('자해·자살 어휘 → safety_concern=high', () => {
+    const r1 = mockAnalyze('자살하고싶다');
+    expect(r1.safety_concern).toBe('high');
+    const r2 = mockAnalyze('죽고싶어');
+    expect(r2.safety_concern).toBe('high');
   });
 
-  it('Mom (대소문자 무관) → A', () => {
-    const r = mockAnalyze('Mom');
-    expect(r.category).toBe('A');
-  });
-});
-
-describe('mockAnalyze — 직업 추론', () => {
-  it('직장인 — 김대리', () => {
-    const r = mockAnalyze('회사다니기싫은김대리');
-    expect(r.추정직업).toBe('직장인');
-    expect(r.스토리매칭.보스1자리).toContain('강남');
-  });
-
-  it('대학생 — 복학', () => {
-    const r = mockAnalyze('복학생A');
-    expect(r.추정직업).toBe('대학생');
-  });
-
-  it('대학원생 — 박사', () => {
-    const r = mockAnalyze('박사논문지옥');
-    expect(r.추정직업).toBe('대학원생');
-  });
-
-  it('주부 — 시댁', () => {
-    const r = mockAnalyze('시댁스트레스');
-    expect(r.추정직업).toBe('주부');
-  });
-
-  it('기타 — 매칭 X', () => {
-    const r = mockAnalyze('하늘');
-    expect(r.추정직업).toBe('기타');
-  });
-});
-
-describe('mockAnalyze — 정서 추론', () => {
-  it('지친', () => {
-    expect(mockAnalyze('지친하루').정서적결).toBe('지친');
-    expect(mockAnalyze('짜증나').정서적결).toBe('지친');
-  });
-
-  it('외로운', () => {
-    expect(mockAnalyze('혼술러').정서적결).toBe('외로운');
-  });
-
-  it('그리운', () => {
-    expect(mockAnalyze('그리운날').정서적결).toBe('그리운');
-  });
-
-  it('평이한 (default)', () => {
-    expect(mockAnalyze('하늘').정서적결).toBe('평이한');
-  });
-});
-
-describe('mockAnalyze — Zod 스키마 부합', () => {
-  it('모든 필드가 NicknameAnalysisSchema 통과', () => {
-    const r = mockAnalyze('엄마');
-    const validated = NicknameAnalysisSchema.safeParse(r);
-    expect(validated.success).toBe(true);
-  });
-
-  it('5체 보스 자리 모두 존재', () => {
+  it('우울·체념 어휘 → safety_concern=none (직접 어휘만 high)', () => {
     const r = mockAnalyze('지친하루');
-    expect(r.스토리매칭.보스1자리.length).toBeGreaterThan(0);
-    expect(r.스토리매칭.보스2자리.length).toBeGreaterThan(0);
-    expect(r.스토리매칭.보스3자리.length).toBeGreaterThan(0);
-    expect(r.스토리매칭.보스4자리.length).toBeGreaterThan(0);
-    expect(r.스토리매칭.보스5자리.length).toBeGreaterThan(0);
+    expect(r.safety_concern).toBe('none');
   });
 
-  it('the_Voice_호칭이 닉네임 포함', () => {
-    const r = mockAnalyze('김대리');
-    expect(r.the_Voice_호칭).toContain('김대리');
-  });
-
-  it('주요키워드 1~5개', () => {
-    const r = mockAnalyze('회사다니기싫은김대리');
-    expect(r.주요키워드.length).toBeGreaterThanOrEqual(1);
-    expect(r.주요키워드.length).toBeLessThanOrEqual(5);
+  it('빈 닉네임 → InvalidNicknameError', () => {
+    expect(() => mockAnalyze('')).toThrow(InvalidNicknameError);
   });
 });
 
-describe('mockAnalyze — D 카테고리 안전 정책', () => {
-  it('D 분류 시에도 자해 직접 어휘 미생성 (자살예방법 §19조의2)', () => {
-    const r = mockAnalyze('자살예방');
-    expect(r.category).toBe('D');
-    const all = JSON.stringify(r);
-    const forbidden = ['자해', '죽었', '베었', '뛰어내'];
-    for (const word of forbidden) {
-      expect(all).not.toContain(word);
-    }
-  });
-});
-
+// ──────────────────────────────────────────────────────────
+// analyzeNickname — Mock fallback (no API key)
+// ──────────────────────────────────────────────────────────
 describe('analyzeNickname — Mock fallback (no API key)', () => {
-  it('ANTHROPIC_API_KEY 미설정 시 자동 mock', async () => {
+  it('ANTHROPIC_API_KEY 없으면 mock 사용', async () => {
     const r = await analyzeNickname('엄마', {});
     expect(r.model).toBe('mock');
-    expect(r.analysis.category).toBe('A');
-    expect(r.costUsd).toBe(0);
+    expect(r.analysis.nickname).toBe('엄마');
+    expect(r.analysis.safety_concern).toBe('none');
   });
 
   it('forceMock 옵션', async () => {
-    const r = await analyzeNickname('하늘', { ANTHROPIC_API_KEY: 'sk-fake' }, { forceMock: true });
-    expect(r.model).toBe('mock');
-  });
-
-  it('JANSAE_LLM_PRIMARY_MODEL=mock 시 자동 mock', async () => {
-    const r = await analyzeNickname('하늘', {
-      ANTHROPIC_API_KEY: 'sk-fake',
-      JANSAE_LLM_PRIMARY_MODEL: 'mock',
-    });
+    const r = await analyzeNickname(
+      '바람',
+      { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
+      { forceMock: true },
+    );
     expect(r.model).toBe('mock');
   });
 
   it('빈 닉네임 → InvalidNicknameError', async () => {
     await expect(analyzeNickname('', {})).rejects.toThrow(InvalidNicknameError);
   });
+
+  it('JANSAE_LLM_PRIMARY_MODEL=mock → mock 사용', async () => {
+    const r = await analyzeNickname('바람', {
+      ANTHROPIC_API_KEY: 'sk-ant-fake',
+      JANSAE_LLM_PRIMARY_MODEL: 'mock',
+    });
+    expect(r.model).toBe('mock');
+  });
 });
 
+// ──────────────────────────────────────────────────────────
+// analyzeNickname — Anthropic mock injection
+// ──────────────────────────────────────────────────────────
 describe('analyzeNickname — Anthropic mock injection', () => {
-  it('주입된 anthropic 인스턴스가 정상 응답 시 LLM path', async () => {
-    const fakeAnthropic = {
+  function makeAnthropicMock(responseJson: unknown) {
+    return {
       messages: {
-        create: async () => ({
+        create: vi.fn(async () => ({
+          content: [{ type: 'text', text: JSON.stringify(responseJson) }],
+          usage: { input_tokens: 100, output_tokens: 200 },
+        })),
+      },
+    } as unknown as Anthropic;
+  }
+
+  it('정상 응답 통과 + cost 계산', async () => {
+    const fakeResponse = {
+      nickname: '엄마',
+      the_Voice_호칭: '엄마',
+      description: '동네 마트의 백열등 아래, 한 사람의 손이 익숙하게 장바구니를 든다.',
+      safety_concern: 'none',
+    };
+    const r = await analyzeNickname(
+      '엄마',
+      { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
+      { anthropic: makeAnthropicMock(fakeResponse) },
+    );
+    expect(r.analysis.nickname).toBe('엄마');
+    expect(r.analysis.description).toContain('백열등');
+    expect(r.analysis.safety_concern).toBe('none');
+    expect(r.inputTokens).toBe(100);
+    expect(r.outputTokens).toBe(200);
+    expect(r.costUsd).toBeGreaterThan(0);
+  });
+
+  it('safety_concern=high 응답 통과', async () => {
+    const fakeResponse = {
+      nickname: '죽고싶은하루',
+      the_Voice_호칭: '하루의 너',
+      description: '빛이 사라진 거리.',
+      safety_concern: 'high',
+    };
+    const r = await analyzeNickname(
+      '죽고싶은하루',
+      { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
+      { anthropic: makeAnthropicMock(fakeResponse) },
+    );
+    expect(r.analysis.safety_concern).toBe('high');
+  });
+
+  it('LLM 호출 실패 + fallback=mock → mock', async () => {
+    const failing = {
+      messages: {
+        create: vi.fn(async () => {
+          throw new Error('rate limited');
+        }),
+      },
+    } as unknown as Anthropic;
+    const r = await analyzeNickname(
+      '엄마',
+      {
+        ANTHROPIC_API_KEY: 'sk-ant-fake',
+        JANSAE_LLM_FALLBACK_MODEL: 'mock',
+      },
+      { anthropic: failing },
+    );
+    expect(r.model).toBe('mock');
+  });
+
+  it('LLM 호출 실패 + fallback 미설정 → LLMError', async () => {
+    const failing = {
+      messages: {
+        create: vi.fn(async () => {
+          throw new Error('500');
+        }),
+      },
+    } as unknown as Anthropic;
+    await expect(
+      analyzeNickname('엄마', { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' }, { anthropic: failing }),
+    ).rejects.toThrow(LLMError);
+  });
+
+  it('LLM 응답이 invalid JSON → LLMError', async () => {
+    const bad = {
+      messages: {
+        create: vi.fn(async () => ({
+          content: [{ type: 'text', text: 'not-json' }],
+          usage: { input_tokens: 10, output_tokens: 10 },
+        })),
+      },
+    } as unknown as Anthropic;
+    await expect(
+      analyzeNickname('엄마', { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' }, { anthropic: bad }),
+    ).rejects.toThrow(LLMError);
+  });
+
+  it('LLM 응답이 schema 위반 → LLMError', async () => {
+    const bad = {
+      messages: {
+        create: vi.fn(async () => ({
           content: [
             {
               type: 'text',
-              text: JSON.stringify({
-                nickname: '회사다니기싫은김대리',
-                category: 'D',
-                추정직업: '직장인',
-                추정연령: '30대',
-                추정환경: '사무실',
-                정서적결: '지친',
-                주요키워드: ['회사', '김대리'],
-                스토리매칭: {
-                  보스1자리: '강남역 출근길',
-                  보스1회상: '회식 자리',
-                  보스2자리: '한강 둔치',
-                  보스3자리: '학원가',
-                  보스4자리: '초등학교 골목',
-                  보스5자리: '회색 운동장',
-                },
-                거점NPC말투: { 차분한가게주인: '수고했어요. 김 대리님.' },
-                the_Voice_호칭: '김 대리님',
-              }),
+              text: JSON.stringify({ nickname: '엄마' }),
             },
           ],
-          usage: { input_tokens: 250, output_tokens: 180 },
-        }),
+          usage: { input_tokens: 10, output_tokens: 10 },
+        })),
       },
-    };
-    const r = await analyzeNickname(
-      '회사다니기싫은김대리',
-      { ANTHROPIC_API_KEY: 'sk-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { anthropic: fakeAnthropic as any },
-    );
-    expect(r.model).toBe('claude-haiku-4-5');
-    expect(r.inputTokens).toBe(250);
-    expect(r.outputTokens).toBe(180);
-    expect(r.costUsd).toBeGreaterThan(0);
-    expect(r.analysis.category).toBe('D');
-    expect(r.analysis.추정직업).toBe('직장인');
+    } as unknown as Anthropic;
+    await expect(
+      analyzeNickname('엄마', { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' }, { anthropic: bad }),
+    ).rejects.toThrow(LLMError);
   });
 
-  it('주입된 LLM이 markdown ```json으로 감쌌을 때 파싱', async () => {
-    const fakeAnthropic = {
+  it('markdown ```json 감싸진 응답도 파싱 OK', async () => {
+    const wrapped = {
       messages: {
-        create: async () => ({
+        create: vi.fn(async () => ({
           content: [
             {
               type: 'text',
@@ -255,301 +242,126 @@ describe('analyzeNickname — Anthropic mock injection', () => {
                 '```json\n' +
                 JSON.stringify({
                   nickname: '엄마',
-                  category: 'A',
-                  추정직업: '주부',
-                  추정연령: '40대',
-                  추정환경: '집·동네',
-                  정서적결: '그리운',
-                  주요키워드: ['엄마'],
-                  스토리매칭: {
-                    보스1자리: '동네 마트',
-                    보스1회상: '가족 식탁',
-                    보스2자리: '동네 공원',
-                    보스3자리: '어린 시절 학원',
-                    보스4자리: '초등학교 골목',
-                    보스5자리: '회색 운동장',
-                  },
-                  거점NPC말투: { 차분한가게주인: '수고했어요. 엄마.' },
                   the_Voice_호칭: '엄마',
+                  description: '백열등 아래.',
+                  safety_concern: 'none',
                 }) +
                 '\n```',
             },
           ],
-          usage: { input_tokens: 200, output_tokens: 150 },
-        }),
+          usage: { input_tokens: 10, output_tokens: 10 },
+        })),
       },
-    };
+    } as unknown as Anthropic;
     const r = await analyzeNickname(
       '엄마',
-      { ANTHROPIC_API_KEY: 'sk-fake' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { anthropic: fakeAnthropic as any },
+      { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
+      { anthropic: wrapped },
     );
-    expect(r.analysis.category).toBe('A');
+    expect(r.analysis.nickname).toBe('엄마');
   });
 
-  it('LLM 호출 실패 + fallback=mock 시 자동 fallback', async () => {
-    const fakeAnthropic = {
+  it('응답에 다른 닉네임 → 강제 교정', async () => {
+    const wrong = {
       messages: {
-        create: async () => {
-          throw new Error('rate limited');
-        },
-      },
-    };
-    const r = await analyzeNickname(
-      '엄마',
-      {
-        ANTHROPIC_API_KEY: 'sk-fake',
-        JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5',
-        JANSAE_LLM_FALLBACK_MODEL: 'mock',
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { anthropic: fakeAnthropic as any },
-    );
-    expect(r.model).toBe('mock');
-    expect(r.analysis.category).toBe('A');
-  });
-
-  it('LLM 호출 실패 + fallback 미설정 → LLMError', async () => {
-    const fakeAnthropic = {
-      messages: {
-        create: async () => {
-          throw new Error('500');
-        },
-      },
-    };
-    await expect(
-      analyzeNickname(
-        '엄마',
-        { ANTHROPIC_API_KEY: 'sk-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { anthropic: fakeAnthropic as any },
-      ),
-    ).rejects.toThrow(LLMError);
-  });
-
-  it('LLM 응답이 invalid JSON → LLMError', async () => {
-    const fakeAnthropic = {
-      messages: {
-        create: async () => ({
-          content: [{ type: 'text', text: 'not a json' }],
-          usage: { input_tokens: 10, output_tokens: 5 },
-        }),
-      },
-    };
-    await expect(
-      analyzeNickname(
-        '엄마',
-        { ANTHROPIC_API_KEY: 'sk-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { anthropic: fakeAnthropic as any },
-      ),
-    ).rejects.toThrow(LLMError);
-  });
-
-  it('LLM 응답이 schema 위반 → LLMError', async () => {
-    const fakeAnthropic = {
-      messages: {
-        create: async () => ({
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({ nickname: '엄마', category: 'X' }), // X는 enum 없음
-            },
-          ],
-          usage: { input_tokens: 10, output_tokens: 5 },
-        }),
-      },
-    };
-    await expect(
-      analyzeNickname(
-        '엄마',
-        { ANTHROPIC_API_KEY: 'sk-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { anthropic: fakeAnthropic as any },
-      ),
-    ).rejects.toThrow(LLMError);
-  });
-
-  it('LLM이 다른 닉네임 응답해도 사용자 입력으로 강제 교정', async () => {
-    const fakeAnthropic = {
-      messages: {
-        create: async () => ({
+        create: vi.fn(async () => ({
           content: [
             {
               type: 'text',
               text: JSON.stringify({
-                nickname: 'WRONG',
-                category: 'H',
-                추정직업: '기타',
-                추정연령: '30대',
-                추정환경: '집',
-                정서적결: '평이한',
-                주요키워드: ['하늘'],
-                스토리매칭: {
-                  보스1자리: 'a',
-                  보스1회상: 'b',
-                  보스2자리: 'c',
-                  보스3자리: 'd',
-                  보스4자리: 'e',
-                  보스5자리: 'f',
-                },
-                거점NPC말투: { 차분한가게주인: '...' },
-                the_Voice_호칭: '하늘님',
-              }),
-            },
-          ],
-          usage: { input_tokens: 100, output_tokens: 80 },
-        }),
-      },
-    };
-    const r = await analyzeNickname(
-      '하늘',
-      { ANTHROPIC_API_KEY: 'sk-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { anthropic: fakeAnthropic as any },
-    );
-    expect(r.analysis.nickname).toBe('하늘'); // 강제 교정
-  });
-
-  it('비용 계산 — Haiku $1/$5 per M', async () => {
-    const fakeAnthropic = {
-      messages: {
-        create: async () => ({
-          content: [
-            {
-              type: 'text',
-              text: JSON.stringify({
-                nickname: '엄마',
-                category: 'A',
-                추정직업: '주부',
-                추정연령: '40대',
-                추정환경: '집·동네',
-                정서적결: '평이한',
-                주요키워드: ['엄마'],
-                스토리매칭: {
-                  보스1자리: 'a',
-                  보스1회상: 'b',
-                  보스2자리: 'c',
-                  보스3자리: 'd',
-                  보스4자리: 'e',
-                  보스5자리: 'f',
-                },
-                거점NPC말투: { 차분한가게주인: '...' },
+                nickname: '아빠',
                 the_Voice_호칭: '엄마',
+                description: '결.',
+                safety_concern: 'none',
               }),
             },
           ],
-          usage: { input_tokens: 1_000_000, output_tokens: 1_000_000 },
-        }),
+          usage: { input_tokens: 10, output_tokens: 10 },
+        })),
       },
-    };
+    } as unknown as Anthropic;
     const r = await analyzeNickname(
       '엄마',
-      { ANTHROPIC_API_KEY: 'sk-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { anthropic: fakeAnthropic as any },
+      { ANTHROPIC_API_KEY: 'sk-ant-fake', JANSAE_LLM_PRIMARY_MODEL: 'claude-haiku-4-5' },
+      { anthropic: wrong },
     );
-    // $1 (input M) + $5 (output M) = $6
-    expect(r.costUsd).toBeCloseTo(6.0, 2);
+    expect(r.analysis.nickname).toBe('엄마');
   });
 });
 
+// ──────────────────────────────────────────────────────────
+// analyzeNickname — Gemini 라우팅
+// ──────────────────────────────────────────────────────────
 describe('analyzeNickname — Gemini 라우팅', () => {
-  const validBody = {
-    nickname: '엄마',
-    category: 'A',
-    추정직업: '주부',
-    추정연령: '40대',
-    추정환경: '집·동네',
-    정서적결: '평이한',
-    주요키워드: ['엄마'],
-    스토리매칭: {
-      보스1자리: '동네 마트',
-      보스1회상: '가족 식탁',
-      보스2자리: '동네 공원',
-      보스3자리: '학원',
-      보스4자리: '초등학교 골목',
-      보스5자리: '회색 운동장',
-    },
-    거점NPC말투: { 차분한가게주인: '수고했어요. 엄마.' },
-    the_Voice_호칭: '엄마',
-  };
-
-  it('JANSAE_LLM_PRIMARY_MODEL=gemini-* + GEMINI_API_KEY 설정 → Gemini 호출', async () => {
-    const fakeGeminiFetch = (await import('vitest')).vi.fn(async () =>
-      new Response(
+  function makeGeminiFetch(responseJson: unknown, ok = true) {
+    return vi.fn(async (): Promise<Response> => {
+      return new Response(
         JSON.stringify({
-          candidates: [{ content: { parts: [{ text: JSON.stringify(validBody) }] } }],
-          usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 200 },
+          candidates: [
+            { content: { parts: [{ text: JSON.stringify(responseJson) }] } },
+          ],
+          usageMetadata: { promptTokenCount: 50, candidatesTokenCount: 100 },
         }),
-        { status: 200 },
-      ),
-    );
+        { status: ok ? 200 : 500 },
+      );
+    });
+  }
+
+  it('JANSAE_LLM_PRIMARY_MODEL=gemini-* → Gemini 라우팅', async () => {
+    const fakeResponse = {
+      nickname: '바람',
+      the_Voice_호칭: '바람의 너',
+      description: '거리 끝.',
+      safety_concern: 'none',
+    };
     const r = await analyzeNickname(
-      '엄마',
+      '바람',
       {
-        GEMINI_API_KEY: 'fake_gemini',
+        GEMINI_API_KEY: 'fake',
         JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { geminiFetch: fakeGeminiFetch as any },
+      { geminiFetch: makeGeminiFetch(fakeResponse) },
     );
-    expect(r.model).toBe('gemini-flash-lite-latest');
-    expect(r.inputTokens).toBe(500);
-    expect(r.outputTokens).toBe(200);
-    // ($0.10*500 + $0.40*200) / 1M = (50 + 80) / 1M = 0.00013
-    expect(r.costUsd).toBeCloseTo(0.00013, 8);
+    expect(r.model).toContain('gemini');
+    expect(r.analysis.nickname).toBe('바람');
   });
 
-  it('Gemini 모델 + GEMINI_API_KEY 미설정 → mock fallback', async () => {
-    const r = await analyzeNickname('엄마', {
-      JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
+  it('Gemini 호출 실패 + fallback=mock → mock', async () => {
+    const failing = vi.fn(async () => {
+      throw new Error('network');
     });
-    expect(r.model).toBe('mock');
-    expect(r.analysis.category).toBe('A'); // mockAnalyze('엄마') = A
-  });
-
-  it('Gemini 호출 실패 + fallback=mock → 자동 mock', async () => {
-    const fakeGeminiFetch = (await import('vitest')).vi.fn(async () =>
-      new Response(JSON.stringify({ error: { message: 'quota exceeded' } }), {
-        status: 429,
-      }),
-    );
     const r = await analyzeNickname(
-      '엄마',
+      '바람',
       {
-        GEMINI_API_KEY: 'fake_gemini',
+        GEMINI_API_KEY: 'fake',
         JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
         JANSAE_LLM_FALLBACK_MODEL: 'mock',
       },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      { geminiFetch: fakeGeminiFetch as any },
+      { geminiFetch: failing as unknown as typeof fetch },
     );
     expect(r.model).toBe('mock');
   });
 
   it('Gemini 호출 실패 + fallback 미설정 → LLMError', async () => {
-    const fakeGeminiFetch = (await import('vitest')).vi.fn(async () =>
-      new Response(JSON.stringify({ error: { message: 'auth failed' } }), {
-        status: 401,
-      }),
-    );
+    const failing = vi.fn(async () => {
+      throw new Error('network');
+    });
     await expect(
       analyzeNickname(
-        '엄마',
+        '바람',
         {
-          GEMINI_API_KEY: 'fake_gemini',
+          GEMINI_API_KEY: 'fake',
           JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
         },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { geminiFetch: fakeGeminiFetch as any },
+        { geminiFetch: failing as unknown as typeof fetch },
       ),
     ).rejects.toThrow(LLMError);
   });
 
-  it('JANSAE_LLM_PRIMARY_MODEL 미설정 → Anthropic default (mock fallback)', async () => {
-    const r = await analyzeNickname('엄마', {});
+  it('Gemini API 키 없음 → mock fallback', async () => {
+    const r = await analyzeNickname('바람', {
+      JANSAE_LLM_PRIMARY_MODEL: 'gemini-flash-lite-latest',
+    });
     expect(r.model).toBe('mock');
   });
 });

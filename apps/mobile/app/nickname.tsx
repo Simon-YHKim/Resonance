@@ -34,9 +34,12 @@ export default function NicknameScreen() {
     setAnalyzing(true);
     try {
       const res = await api.analyzeNickname(trimmed);
-      setAnalysis(res.user_wiki.nickname_analysis);
-      // Phase 2: router.push('/character');
-      // Phase 1: 임시로 첫 분석 결과 직접 표시
+      const analysis = res.user_wiki.nickname_analysis;
+      setAnalysis(analysis, res.user_wiki.nickname_code ?? null);
+      if (analysis.safety_concern === 'high') {
+        useGame.getState().setSafetyHigh(true);
+      }
+      router.push('/character');
     } catch (err) {
       if (err instanceof ResonanceApiError) {
         if (err.code === 'RATE_LIMITED') {
@@ -95,13 +98,13 @@ export default function NicknameScreen() {
           <Text className="text-fg-primary font-display text-base mb-1">
             {analysis.the_Voice_호칭}
           </Text>
-          <Text className="text-fg-muted text-sm italic mb-2">
-            {analysis.추정직업} · {analysis.추정연령} · {analysis.정서적결}
+          <Text className="text-fg-muted text-xs italic mb-2">
+            {[analysis.추정직업, analysis.추정연령, analysis.정서적결]
+              .filter(Boolean)
+              .join(' · ')}
           </Text>
-          <Text className="text-fg-muted text-xs leading-relaxed">
-            보스 1: {analysis.스토리매칭.보스1자리}
-            {'\n'}보스 2: {analysis.스토리매칭.보스2자리}
-            {'\n'}보스 3: {analysis.스토리매칭.보스3자리}
+          <Text className="text-fg-muted text-sm leading-relaxed">
+            {analysis.description}
           </Text>
         </View>
       )}

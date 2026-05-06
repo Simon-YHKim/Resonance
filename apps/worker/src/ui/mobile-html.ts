@@ -306,6 +306,23 @@ export const MOBILE_HTML = `<!doctype html>
     <span id="loading-text">잔향이 듣고 있어요</span>
   </div>
 
+  <!-- 안전 모달 (자살예방법 §27조의8) -->
+  <div id="safety-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:20px">
+    <div style="max-width:340px;background:var(--bg-elev);border-radius:14px;padding:22px;border:1px solid rgba(255,180,180,0.3)">
+      <div style="font-size:14px;color:var(--fg-muted);margin-bottom:6px">잔향이 한 번 멈추고 너를 본다.</div>
+      <div style="font-size:18px;font-weight:600;color:var(--fg);margin-bottom:14px;line-height:1.4">너의 결을 먼저 듣고 싶어요.</div>
+      <div style="font-size:14px;color:var(--fg);line-height:1.6;margin-bottom:18px">
+        혼자 마주하기 힘든 무게가 있다면<br/>
+        <strong style="font-size:16px">자살예방상담 1393</strong> (24시간 무료)<br/>
+        <span style="color:var(--fg-muted);font-size:12px">— 잔향계 너머의 사람도 너의 잔향을 듣는다.</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="tel:1393" style="flex:1;text-align:center;padding:12px;background:var(--accent);color:#0F0E14;border-radius:8px;text-decoration:none;font-weight:600">1393 전화하기</a>
+        <button id="safety-close" type="button" class="ghost" style="flex:1;padding:12px">닫기</button>
+      </div>
+    </div>
+  </div>
+
   <footer>
     <div class="footer-quote">"잔향이 — 잠시, 머물렀어요."</div>
     <div>
@@ -358,6 +375,17 @@ export const MOBILE_HTML = `<!doctype html>
     $error.style.display = '';
   }
   function clearError() { $error.style.display = 'none'; $error.textContent = ''; }
+
+  // 자살예방법 §27조의8 — safety_concern='high' 시 1393 안내 모달
+  function showSafetyModal() {
+    var $m = document.getElementById('safety-modal');
+    if (!$m) return;
+    $m.style.display = 'flex';
+    var $close = document.getElementById('safety-close');
+    if ($close) {
+      $close.onclick = function () { $m.style.display = 'none'; };
+    }
+  }
   function setLoading(on, text) {
     $loading.style.display = on ? '' : 'none';
     if (text) $loadingText.textContent = text;
@@ -411,6 +439,10 @@ export const MOBILE_HTML = `<!doctype html>
       }
       state.analysis = r.body.user_wiki.nickname_analysis;
       state.nicknameCode = r.body.user_wiki.nickname_code || null;
+      // 닉네임에서 자살 위험 신호 감지 시 1393 안내 (자살예방법 §27조의8)
+      if (state.analysis && state.analysis.safety_concern === 'high') {
+        showSafetyModal();
+      }
       state.analysisMeta = r.body.meta;
       renderCharacter();
       hide($stageNickname);
@@ -450,18 +482,30 @@ export const MOBILE_HTML = `<!doctype html>
       ? m.model + ' · in ' + m.input_tokens + ' / out ' + m.output_tokens + ' tok · ≈ $' + m.cost_usd.toFixed(6)
       : '';
 
+    var metaParts = [a.추정직업, a.추정연령, a.정서적결].filter(function (s) { return !!s; });
+    var metaLine = metaParts.length > 0 ? metaParts.map(function (s) { return escapeHtml(s); }).join(' · ') : '';
+    var safetyHtml = a.safety_concern === 'high' ?
+      '<div class="safety-banner" style="background:rgba(255,180,180,0.08);border:1px solid rgba(255,180,180,0.3);border-radius:8px;padding:10px;margin:10px 0;font-size:13px;color:#ffd1d1">' +
+        '<strong>잔향이 한 번 멈추고 너를 본다.</strong><br/>' +
+        '<span style="color:var(--fg-muted);font-size:12px">힘들면 자살예방상담 — 1393 (24시간 무료). 너의 결을 먼저 듣고 싶어요.</span>' +
+      '</div>' : '';
+
     $stageCharacter.innerHTML =
       '<div class="card">' +
         '<div class="card-label">잔향이 본 너</div>' +
         '<div class="voice-address">' + escapeHtml(a.the_Voice_호칭 || '') + '</div>' +
-        '<div class="meta">' + escapeHtml(a.추정직업 || '') + ' · ' +
-          escapeHtml(a.추정연령 || '') + ' · ' +
-          escapeHtml(a.정서적결 || '') + ' · 카테고리 ' +
-          escapeHtml(a.category || '') + '</div>' +
-        '<div class="field">' +
-          '<div class="field-label">주요 키워드</div>' +
-          '<div class="keywords">' + keywordsHtml + '</div>' +
-        '</div>' +
+        (metaLine ? '<div class="meta">' + metaLine + '</div>' : '') +
+        safetyHtml +
+        (a.description ?
+          '<div class="field">' +
+            '<div class="field-label">결</div>' +
+            '<div class="field-value" style="line-height:1.6">' + escapeHtml(a.description) + '</div>' +
+          '</div>' : '') +
+        (keywordsHtml ?
+          '<div class="field">' +
+            '<div class="field-label">주요 키워드</div>' +
+            '<div class="keywords">' + keywordsHtml + '</div>' +
+          '</div>' : '') +
         (state.nicknameCode ?
           '<div class="field">' +
             '<div class="field-label">내 잔향 코드</div>' +
@@ -473,16 +517,18 @@ export const MOBILE_HTML = `<!doctype html>
             '</div>' +
             '<div style="color:var(--fg-dim);font-size:11px;margin-top:6px">친구가 이 코드로 너의 잔향을 들여다본다.</div>' +
           '</div>' : '') +
-        '<div class="field">' +
-          '<div class="field-label">5체 보스의 자리 — 시간 역행</div>' +
-          '<ul class="boss-list">' + bossHtml + '</ul>' +
-        '</div>' +
-        '<div class="field">' +
-          '<div class="field-label">차분한 가게 주인</div>' +
-          '<div class="field-value" style="font-style:italic">"' +
-          escapeHtml((a.거점NPC말투 && a.거점NPC말투.차분한가게주인) || '') +
-          '"</div>' +
-        '</div>' +
+        (a.스토리매칭 ?
+          '<div class="field">' +
+            '<div class="field-label">5체 보스의 자리 — 시간 역행</div>' +
+            '<ul class="boss-list">' + bossHtml + '</ul>' +
+          '</div>' : '') +
+        ((a.거점NPC말투 && a.거점NPC말투.차분한가게주인) ?
+          '<div class="field">' +
+            '<div class="field-label">차분한 가게 주인</div>' +
+            '<div class="field-value" style="font-style:italic">"' +
+            escapeHtml(a.거점NPC말투.차분한가게주인) +
+            '"</div>' +
+          '</div>' : '') +
         '<div class="meta-cost">' + escapeHtml(costStr) + '</div>' +
       '</div>' +
       '<div class="voice">' +
@@ -607,6 +653,10 @@ export const MOBILE_HTML = `<!doctype html>
         return;
       }
       state.combat = r.body.state;
+      // safety_concern=high 시 1393 안내 모달 (자살예방법 §27조의8)
+      if (r.body.turnResult && r.body.turnResult.safety_concern === 'high') {
+        showSafetyModal();
+      }
       if (r.body.isEnded && r.body.outcome) {
         state.finalOutcome = r.body.outcome;
         renderResult();

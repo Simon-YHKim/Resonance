@@ -10,6 +10,12 @@
  */
 
 import { NicknameAnalysisSchema, type NicknameAnalysis } from '../schemas/nickname-analysis';
+import type {
+  CombatAction,
+  CombatOutcome,
+  CombatState,
+  CombatTurnResult,
+} from '../schemas/combat';
 import type { UserWiki } from '../types';
 
 export interface ResonanceClientConfig {
@@ -44,7 +50,11 @@ interface ApiErrorBody {
 
 interface AnalyzeSuccessBody {
   success: true;
-  user_wiki: { user_id: string; nickname_analysis: NicknameAnalysis };
+  user_wiki: {
+    user_id: string;
+    nickname_analysis: NicknameAnalysis;
+    nickname_code?: string;
+  };
   meta: {
     model: string;
     input_tokens: number;
@@ -56,6 +66,20 @@ interface AnalyzeSuccessBody {
 interface WikiSuccessBody {
   success: true;
   user_wiki: UserWiki;
+}
+
+export interface CombatStartBody {
+  success: true;
+  state: CombatState;
+}
+
+export interface CombatTurnBody {
+  success: true;
+  state: CombatState;
+  turnResult: CombatTurnResult;
+  outcome: CombatOutcome | null;
+  isEnded: boolean;
+  meta: { model: string; input_tokens: number; output_tokens: number; cost_usd: number };
 }
 
 export class ResonanceClient {
@@ -89,6 +113,42 @@ export class ResonanceClient {
       headers: this.headers,
     });
     return await this.parseJson<WikiSuccessBody>(res);
+  }
+
+  /** 전투 시작 — 잊혀진 자 + 초기 state */
+  async combatStart(): Promise<CombatStartBody> {
+    const res = await this.fetch(`${this.config.baseUrl}/api/combat/start`, {
+      method: 'POST',
+      headers: this.headers,
+    });
+    return await this.parseJson<CombatStartBody>(res);
+  }
+
+  /** 전투 1턴 — state + action [+ userText] → 새 state + delta + outcome */
+  async combatTurn(
+    state: CombatState,
+    action: CombatAction,
+    userText?: string,
+  ): Promise<CombatTurnBody> {
+    const res = await this.fetch(`${this.config.baseUrl}/api/combat/turn`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify(userText ? { state, action, userText } : { state, action }),
+    });
+    return await this.parseJson<CombatTurnBody>(res);
+  }
+
+  /** 코드로 다른 사람 잔향 조회 */
+  async getByCode(code: string): Promise<{
+    success: true;
+    code: string;
+    nickname_analysis: Partial<NicknameAnalysis>;
+  }> {
+    const res = await this.fetch(
+      `${this.config.baseUrl}/api/character/by-code/${encodeURIComponent(code)}`,
+      { method: 'GET', headers: this.headers },
+    );
+    return await this.parseJson(res);
   }
 
   /** 헬스 체크 */

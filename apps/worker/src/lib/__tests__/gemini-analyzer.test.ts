@@ -6,22 +6,12 @@ const SYSTEM_PROMPT = '당신은 잔향 닉네임 분석가...';
 
 const validBody = {
   nickname: '엄마',
-  category: 'A',
+  the_Voice_호칭: '엄마',
+  description: '동네 마트의 백열등 아래, 한 사람의 손이 익숙하게 장바구니를 든다.',
+  safety_concern: 'none',
   추정직업: '주부',
   추정연령: '40대',
-  추정환경: '집·동네',
-  정서적결: '평이한',
   주요키워드: ['엄마'],
-  스토리매칭: {
-    보스1자리: '동네 마트',
-    보스1회상: '가족 식탁',
-    보스2자리: '동네 공원',
-    보스3자리: '학원',
-    보스4자리: '초등학교 골목',
-    보스5자리: '회색 운동장',
-  },
-  거점NPC말투: { 차분한가게주인: '수고했어요. 엄마.' },
-  the_Voice_호칭: '엄마',
 };
 
 function fakeFetch(response: { status: number; body: unknown; ok?: boolean }) {
@@ -62,7 +52,8 @@ describe('analyzeWithGemini — 정상 응답', () => {
 
     const r = await analyzeWithGemini('엄마', SYSTEM_PROMPT, 'fake_key', { fetch });
     expect(r.model).toBe('gemini-flash-lite-latest');
-    expect(r.analysis.category).toBe('A');
+    expect(r.analysis.the_Voice_호칭).toBe('엄마');
+    expect(r.analysis.safety_concern).toBe('none');
     expect(r.analysis.추정직업).toBe('주부');
     expect(r.inputTokens).toBe(500);
     expect(r.outputTokens).toBe(200);
@@ -139,7 +130,7 @@ describe('analyzeWithGemini — 정상 응답', () => {
       },
     });
     const r = await analyzeWithGemini('엄마', SYSTEM_PROMPT, 'k', { fetch });
-    expect(r.analysis.category).toBe('A');
+    expect(r.analysis.the_Voice_호칭).toBe('엄마');
   });
 });
 

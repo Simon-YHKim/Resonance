@@ -49,6 +49,8 @@ export const CombatTurnResultSchema = z.object({
   playerHpDelta: z.number().int(),
   enemyHpDelta: z.number().int(),
   resonanceDelta: z.number().int().nonnegative(),
+  /** 자살예방법 §27조의8 안전 트리거 — 'high' 시 앱이 1393 모달 표시 */
+  safety_concern: z.enum(['none', 'high']).default('none'),
 });
 
 export type CombatTurnResult = z.infer<typeof CombatTurnResultSchema>;
@@ -60,4 +62,5 @@ export const CombatLLMResponseSchema = z.object({
   enemyHpDelta: z.number().int().min(-30).max(0),
   playerHpDelta: z.number().int().min(-25).max(0),
   resonanceDelta: z.number().int().min(0).max(20),
+  safety_concern: z.enum(['none', 'high']).optional().default('none'),
 });

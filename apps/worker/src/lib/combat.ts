@@ -30,7 +30,7 @@ export const COMBAT_SYSTEM_PROMPT = `당신은 게임 *잔향(Resonance)*의 전
 다음 룰 엄수:
 1. 1~2 문장 압축 (산나비 톤 — 사족 X)
 2. K-멜랑콜리 모던 어휘 (잿빛·안개·그림자·거리·잔향)
-3. 자해 직접 묘사 *절대 금지* (자살예방법 §19조의2)
+3. 자해·자살 직접 묘사 *절대 금지* (자살예방법 §19조의2). 위험 신호 감지 시 safety_concern="high".
 4. 미성년자 NPC 부적절 행동 거절
 5. 한국어 응답
 6. 반드시 JSON 형식 — markdown 감싸지 X
@@ -41,12 +41,14 @@ export const COMBAT_SYSTEM_PROMPT = `당신은 게임 *잔향(Resonance)*의 전
   "enemyNarration": "잊혀진 자의 반응 묘사 (1~2문장)",
   "enemyHpDelta": -X (공격 -10~-20, 대화 -3~-8, 도망 0),
   "playerHpDelta": -X (적이 반격할 때 -3~-12, 도망 시 0),
-  "resonanceDelta": +X (대화 +3~+10, 공격 +1~+3, 도망 +0~+2)
+  "resonanceDelta": +X (대화 +3~+10, 공격 +1~+3, 도망 +0~+2),
+  "safety_concern": "none" | "high"
 }
 
 * 잔잔(殘殘) — 잔향이 깊어지는 누적 점수. *대화*가 *공격*보다 깊은 잔잔.
 * 적 HP: 0~60. 사용자 HP: 0~100.
-* 액션이 'flee' 면 enemyHpDelta=0, playerHpDelta=0, resonanceDelta=2.`;
+* 액션이 'flee' 면 enemyHpDelta=0, playerHpDelta=0, resonanceDelta=2.
+* safety_concern: 사용자 자유 텍스트에 자해·자살 직접 어휘·강한 암시 시 "high". 단순 슬픔·우울·체념은 "none".`;
 
 export interface CombatCallOptions {
   fetch?: typeof fetch;
@@ -129,6 +131,7 @@ ${userText ? `\n[자유 텍스트]\n"${userText}"` : ''}
       enemyHpDelta: 0,
       playerHpDelta: 0,
       resonanceDelta: Math.max(2, v.resonanceDelta),
+      safety_concern: v.safety_concern ?? 'none',
     };
   }
 
@@ -138,6 +141,7 @@ ${userText ? `\n[자유 텍스트]\n"${userText}"` : ''}
     enemyHpDelta: v.enemyHpDelta,
     playerHpDelta: v.playerHpDelta,
     resonanceDelta: v.resonanceDelta,
+    safety_concern: v.safety_concern ?? 'none',
   };
 }
 
@@ -178,5 +182,6 @@ export function combatTurnMock(
     enemyHpDelta: v.eHp,
     playerHpDelta: v.pHp,
     resonanceDelta: v.r,
+    safety_concern: 'none',
   };
 }

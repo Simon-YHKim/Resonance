@@ -47,8 +47,9 @@ describe('E2E 시나리오 1 — 신규 사용자 가입 → analyze → wiki', 
     const body1: any = await res1.json();
     expect(body1.success).toBe(true);
     expect(body1.user_wiki.user_id).toBe('user_e2e_1');
-    expect(body1.user_wiki.nickname_analysis.추정직업).toBe('직장인');
-    expect(body1.user_wiki.nickname_analysis.스토리매칭.보스1자리).toContain('강남');
+    expect(body1.user_wiki.nickname_analysis.nickname).toBe('회사다니기싫은김대리');
+    expect(body1.user_wiki.nickname_analysis.safety_concern).toBe('none');
+    expect(body1.user_wiki.nickname_analysis.description.length).toBeGreaterThan(10);
     expect(body1.meta.model).toBe('mock');
     expect(body1.meta.cost_usd).toBe(0);
 
@@ -96,7 +97,6 @@ describe('E2E 시나리오 2 — 사용자 컨텍스트 주입 LLM 호출', () =
     expect(r.model).toBe('mock');
     // mock 응답에 the_Voice_호칭 포함 ("김대리님")
     expect(r.response).toContain('김대리');
-    expect(r.response).toContain('직장인');
   });
 
   it('실 LLM (주입) — system prompt 에 wiki 주입 검증', async () => {
@@ -142,7 +142,8 @@ describe('E2E 시나리오 2 — 사용자 컨텍스트 주입 LLM 호출', () =
     expect(r.inputTokens).toBe(300);
     const callArgs = (fakeAnthropic.messages.create as any).mock.calls[0][0];
     expect(callArgs.system).toContain('시댁스트레스'); // wiki 닉네임 주입
-    expect(callArgs.system).toContain('주부'); // 추정직업 (시댁 키워드)
+    // 자유 분석 모드: description 이 LLM이 자유 텍스트로 채움 → 닉네임 본문이 system 에 포함됨
+    expect(callArgs.system).toContain('the Voice 호칭');
   });
 });
 

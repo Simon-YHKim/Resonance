@@ -3,22 +3,13 @@ import { ResonanceClient, ResonanceApiError, validateAnalyze } from '../client';
 
 const sampleAnalysis = {
   nickname: '엄마',
-  category: 'A' as const,
+  the_Voice_호칭: '엄마',
+  description:
+    '동네 마트의 백열등 아래, 한 사람의 손이 익숙하게 장바구니를 든다. 자식의 어린 시절·결혼·가족 식탁이 한 결로 흐른다.',
+  safety_concern: 'none' as const,
   추정직업: '주부',
   추정연령: '40대',
-  추정환경: '집·동네',
-  정서적결: '평이한',
-  주요키워드: ['엄마'],
-  스토리매칭: {
-    보스1자리: '동네 마트',
-    보스1회상: '가족 식탁',
-    보스2자리: '동네 공원',
-    보스3자리: '학원',
-    보스4자리: '초등학교 골목',
-    보스5자리: '회색 운동장',
-  },
-  거점NPC말투: { 차분한가게주인: '수고했어요. 엄마.' },
-  the_Voice_호칭: '엄마',
+  주요키워드: ['엄마', '가족', '돌봄'],
 };
 
 function fakeFetch(response: { status: number; body: unknown }) {
@@ -48,7 +39,8 @@ describe('ResonanceClient — analyzeNickname', () => {
     });
     const r = await client.analyzeNickname('엄마');
     expect(r.success).toBe(true);
-    expect(r.user_wiki.nickname_analysis.category).toBe('A');
+    expect(r.user_wiki.nickname_analysis.the_Voice_호칭).toBe('엄마');
+    expect(r.user_wiki.nickname_analysis.safety_concern).toBe('none');
     expect(r.meta.model).toBe('mock');
 
     // 헤더 확인
@@ -198,6 +190,6 @@ describe('validateAnalyze', () => {
       user_wiki: { user_id: 'u', nickname_analysis: sampleAnalysis },
       meta: { model: 'mock', input_tokens: 0, output_tokens: 0, cost_usd: 0 },
     };
-    expect(validateAnalyze(body).category).toBe('A');
+    expect(validateAnalyze(body).the_Voice_호칭).toBe('엄마');
   });
 });
