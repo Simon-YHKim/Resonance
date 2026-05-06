@@ -536,6 +536,11 @@ export const MOBILE_HTML = `<!doctype html>
           '</div>' +
         '</div>' +
         '<div class="turn-info">턴 ' + (c.turn) + ' / 5 <span class="resonance-pill">잔잔 ' + c.resonance + '</span></div>' +
+        '<div style="margin:10px 0 6px">' +
+          '<div class="hp-bar-label" style="margin-bottom:4px">자유 텍스트 (선택, 최대 200자)</div>' +
+          '<textarea id="user-text" maxlength="200" placeholder="…너에게 한 마디 — 자유롭게.&#10;빈 칸도 OK. 입력하면 잔향이 더 깊게 듣는다."></textarea>' +
+          '<div class="counter"><span id="user-text-count">0</span> / 200</div>' +
+        '</div>' +
         '<div class="row3">' +
           '<button id="act-attack" type="button" class="danger-btn">공격</button>' +
           '<button id="act-dialogue" type="button">대화</button>' +
@@ -545,6 +550,12 @@ export const MOBILE_HTML = `<!doctype html>
       '</div>' +
       '<button class="ghost" id="reset-from-combat" type="button">← 처음으로</button>';
 
+    var $userText = document.getElementById('user-text');
+    var $userTextCount = document.getElementById('user-text-count');
+    $userText.addEventListener('input', function () {
+      $userTextCount.textContent = $userText.value.length;
+    });
+
     document.getElementById('act-attack').addEventListener('click', function () { combatTurn('attack'); });
     document.getElementById('act-dialogue').addEventListener('click', function () { combatTurn('dialogue'); });
     document.getElementById('act-flee').addEventListener('click', function () { combatTurn('flee'); });
@@ -553,8 +564,11 @@ export const MOBILE_HTML = `<!doctype html>
 
   function combatTurn(action) {
     clearError();
+    var $userText = document.getElementById('user-text');
+    var userText = $userText && $userText.value ? $userText.value.trim() : '';
     setLoading(true, action === 'attack' ? '너의 손이 호선을 그린다' : action === 'dialogue' ? '너의 말이 안개에 닿는다' : '너의 발이 거리를 떠난다');
     var payload = { state: state.combat, action: action };
+    if (userText) payload.userText = userText;
     api('/api/combat/turn', payload).then(function (r) {
       setLoading(false);
       if (!r.res.ok || !r.body.success) {
