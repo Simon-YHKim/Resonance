@@ -9,4 +9,4 @@ compatibility_date = "2026-04-01"
 pages_build_output_dir = "dist"
 
 [vars]
-EXPO_PUBLIC_WORKER_BASE_URL = "https://resonance-worker.<account>.workers.dev"
+EXPO_PUBLIC_WORKER_BASE_URL = "https://resonance-worker.hwanydanh.workers.dev"

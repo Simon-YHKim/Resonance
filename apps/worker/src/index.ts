@@ -10,6 +10,7 @@
  */
 
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import type { Bindings } from './types/bindings';
 import { characterRouter } from './routes/character';
 import { combatRouter } from './routes/combat';
@@ -18,6 +19,30 @@ import { storyRouter } from './routes/story';
 import { MOBILE_HTML } from './ui/mobile-html';
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+// CORS — Expo Web (Cloudflare Pages) + Expo dev (localhost) 허용.
+// 핵심 보안: X-Dev-User-Id 위조는 IP rate limit + budget cap 으로 방어 (이전 commit).
+app.use(
+  '/api/*',
+  cors({
+    origin: (origin) => {
+      if (!origin) return origin;
+      // 같은 worker.dev 도메인 (워커 자체 호출)
+      if (origin.endsWith('.workers.dev')) return origin;
+      // Cloudflare Pages (production + preview)
+      if (origin.endsWith('.pages.dev')) return origin;
+      // Expo dev (localhost · 192.168.* 등)
+      if (/^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.|10\.)/.test(origin)) {
+        return origin;
+      }
+      return null;
+    },
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'X-Dev-User-Id', 'Authorization'],
+    maxAge: 86400,
+    credentials: false,
+  }),
+);
 
 // 모바일 친화 HTML UI — wrangler dev tunnel 또는 Cloudflare 배포 시 즉시 동작
 app.get('/', (c) =>
