@@ -82,4 +82,5 @@ INSERT OR IGNORE INTO shop_items (item_id, display_name, description, category, 
   ('cosmetic_grey', '잿빛 외투', '캐릭터 외형 — 기본 잿빛.', 'cosmetic', 'free', 0, '{"skin":"grey"}', 1, 100, strftime('%s','now')*1000),
   ('cosmetic_fog', '안개 자락', '캐릭터 외형 — 안개 결.', 'cosmetic', 'resonance_dust', 100, '{"skin":"fog"}', 1, 101, strftime('%s','now')*1000),
   -- 스토리 모드 (별도 구매)
-  ('story_chapter_1', '스토리 1장 — 남겨진 거인', '스토리 모드 1장 (스테미나 X, 평생 소장).', 'story_chapter', 'krw', 4900, '{"chapter":"ch1"}', 1, 200, strftime('%s','now')*1000);
+  -- 임시: 잔향가루 100 (Toss 통합 후 KRW 4900 으로 전환 예정)
+  ('story_chapter_1', '스토리 1장 — 남겨진 이들', '스토리 모드 1장 (스테미나 X, 5체 보스 + 잔잔 누적, 평생 소장).', 'story_chapter', 'resonance_dust', 100, '{"chapter":"ch1"}', 1, 200, strftime('%s','now')*1000);

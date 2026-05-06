@@ -79,6 +79,29 @@ export interface CombatTurnBody {
   turnResult: CombatTurnResult;
   outcome: CombatOutcome | null;
   isEnded: boolean;
+  stamina?: { current: number; max_daily: number; cost: number; willResetAtMs: number } | null;
+  dustEarned?: number;
+  meta: { model: string; input_tokens: number; output_tokens: number; cost_usd: number };
+}
+
+export interface StoryStartBody {
+  success: true;
+  chapter: string;
+  chapterTitle: string;
+  progress: { chapter: string; current_boss: number; cumulative_resonance: number; status: string };
+  state: CombatState;
+}
+
+export interface StoryTurnBody {
+  success: true;
+  state: CombatState;
+  turnResult: CombatTurnResult;
+  bossOutcome: CombatOutcome | null;
+  storyOutcome: 'in_progress' | 'reconciled' | 'resealed' | 'fled' | 'failed';
+  progress: { chapter: string; current_boss: number; cumulative_resonance: number; status: string };
+  dustEarned: number;
+  nextEnemy: { name: string; description: string; encounter: string; hp: number; maxHp: number; starterState: CombatState } | null;
+  isEnded: boolean;
   meta: { model: string; input_tokens: number; output_tokens: number; cost_usd: number };
 }
 
@@ -136,6 +159,31 @@ export class ResonanceClient {
       body: JSON.stringify(userText ? { state, action, userText } : { state, action }),
     });
     return await this.parseJson<CombatTurnBody>(res);
+  }
+
+  /** 스토리 모드 시작 — 챕터 미보유 시 403 */
+  async storyStart(chapter: string = 'ch1'): Promise<StoryStartBody> {
+    const res = await this.fetch(`${this.config.baseUrl}/api/story/start`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ chapter }),
+    });
+    return await this.parseJson<StoryStartBody>(res);
+  }
+
+  /** 스토리 모드 1턴 — 보스 격파 시 nextEnemy 자동 제공 */
+  async storyTurn(
+    state: CombatState,
+    action: CombatAction,
+    chapter: string = 'ch1',
+    userText?: string,
+  ): Promise<StoryTurnBody> {
+    const res = await this.fetch(`${this.config.baseUrl}/api/story/turn`, {
+      method: 'POST',
+      headers: this.headers,
+      body: JSON.stringify({ state, action, chapter, ...(userText ? { userText } : {}) }),
+    });
+    return await this.parseJson<StoryTurnBody>(res);
   }
 
   /** 코드로 다른 사람 잔향 조회 */

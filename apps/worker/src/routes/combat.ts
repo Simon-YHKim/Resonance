@@ -24,6 +24,8 @@ import { LLMError, detectSafetyConcern } from '../lib/nickname-analyzer';
 import { checkRateLimit } from '../middleware/rate-limit';
 import { checkBudget, parseBudget } from '../lib/budget-guard';
 import { consumeStamina } from '../lib/stamina';
+import { earnResonanceDust } from './shop';
+import { STORY_CONSTANTS } from '../lib/forgetters';
 
 export const combatRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -204,6 +206,17 @@ combatRouter.post('/turn', async (c) => {
   else if (nextState.player.hp <= 0) outcome = 'defeat';
   else if (nextState.turn >= TURN_LIMIT) outcome = 'stalemate';
 
+  // 잔향가루 적립 — arcade victory (스토리 외) +20
+  let dustEarned = 0;
+  if (outcome === 'victory' && userId !== 'anonymous') {
+    try {
+      await earnResonanceDust(c.env.DB, userId, STORY_CONSTANTS.ARCADE_VICTORY_DUST);
+      dustEarned = STORY_CONSTANTS.ARCADE_VICTORY_DUST;
+    } catch {
+      /* 적립 실패는 응답 막지 않음 */
+    }
+  }
+
   // LLM 사용량 로깅 (실 호출 시)
   if (model !== 'mock') {
     try {
@@ -228,6 +241,7 @@ combatRouter.post('/turn', async (c) => {
     outcome,
     isEnded: outcome !== null,
     stamina: stamSnapshot,
+    dustEarned,
     meta: { model, input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: costUsd },
   });
 });

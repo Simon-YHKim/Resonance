@@ -179,6 +179,9 @@ export default function CharacterScreen() {
         <ActionButton onPress={startCombat} disabled={isCombatBusy || rerolling}>
           {isCombatBusy ? '잊혀진 자가 일어선다...' : '잊혀진 자에게 다가간다'}
         </ActionButton>
+        <ActionButton variant="ghost" onPress={() => router.push('/story')}>
+          스토리 1장 — 남겨진 이들 (5체)
+        </ActionButton>
         <ActionButton variant="ghost" onPress={reroll} disabled={rerolling || isCombatBusy}>
           {rerolling ? '잔향이 다시 듣고 있어요...' : '잔향이 한 번 더 — 다시 듣기'}
         </ActionButton>
