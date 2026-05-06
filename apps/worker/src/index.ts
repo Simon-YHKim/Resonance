@@ -35,6 +35,8 @@ app.get('/api/health', (c) =>
       'GET /api/health',
       'POST /api/character/analyze',
       'GET /api/character/wiki',
+      'GET /api/character/code',
+      'GET /api/character/by-code/:code',
       'POST /api/combat/start',
       'POST /api/combat/turn',
     ],

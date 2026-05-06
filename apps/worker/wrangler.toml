@@ -19,6 +19,12 @@ migrations_dir = "migrations"
 JANSAE_LLM_PRIMARY_MODEL = "gemini-flash-lite-latest"
 JANSAE_LLM_FALLBACK_MODEL = "mock"
 
+# paid-api-guard: 일일 LLM 비용 캡 (USD)
+# 사용자별 캡 도달 → 해당 사용자만 mock 강제
+# 전 시스템 캡 도달 → 모든 호출 mock 강제 (운영 안전판)
+USER_DAILY_BUDGET_USD = "0.10"
+DAILY_BUDGET_USD = "1.00"
+
 # Phase 2+ 활성화 예정 (현재 주석)
 # [[kv_namespaces]]
 # binding = "KV_NICKNAMES"

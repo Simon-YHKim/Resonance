@@ -21,10 +21,14 @@ import {
 import { logLLMUsage } from '../lib/usage-logger';
 import { getCurrentUserId } from '../middleware/auth';
 import { LLMError } from '../lib/nickname-analyzer';
+import { checkRateLimit } from '../middleware/rate-limit';
+import { checkBudget, parseBudget } from '../lib/budget-guard';
 
 export const combatRouter = new Hono<{ Bindings: Bindings }>();
 
 const TURN_LIMIT = 5;
+// paid-api-guard: 사용자당 시간당 전투 턴 호출 수 (5턴 × 6배틀)
+const COMBAT_RATE_LIMIT_PER_HOUR = 30;
 
 function clamp(n: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, n));
@@ -74,9 +78,35 @@ combatRouter.post('/turn', async (c) => {
     );
   }
 
+  // paid-api-guard: rate limit (시간당 N턴) — 익명 사용자는 통과 (D1 user FK 없음)
+  if (userId !== 'anonymous') {
+    const rl = await checkRateLimit(c.env.DB, userId, 'battle', COMBAT_RATE_LIMIT_PER_HOUR);
+    if (!rl.allowed) {
+      return c.json(
+        {
+          success: false,
+          error: `시간당 ${rl.limit}턴까지 가능합니다. 잠시 후 다시 시도해주세요.`,
+          code: 'RATE_LIMITED',
+          retry_after_ms: rl.retryAfterMs,
+        },
+        429,
+      );
+    }
+  }
+
+  // paid-api-guard: 일일 비용 캡 — 초과 시 mock 강제
+  const userBudget = parseBudget(c.env.USER_DAILY_BUDGET_USD, 0.1);
+  const globalBudget = parseBudget(c.env.DAILY_BUDGET_USD, 1.0);
+  const budget =
+    userId !== 'anonymous'
+      ? await checkBudget(c.env.DB, userId, userBudget, globalBudget)
+      : ({ withinBudget: true } as { withinBudget: boolean; reason?: 'user_cap' | 'global_cap' });
+
   // Gemini 호출 (또는 mock)
   const useMock =
-    !c.env.GEMINI_API_KEY || c.env.JANSAE_LLM_PRIMARY_MODEL === 'mock';
+    !c.env.GEMINI_API_KEY ||
+    c.env.JANSAE_LLM_PRIMARY_MODEL === 'mock' ||
+    !budget.withinBudget;
 
   let result;
   let model = 'mock';

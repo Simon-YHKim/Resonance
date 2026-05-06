@@ -45,6 +45,23 @@ export function createTestD1(): TestD1 {
         if (lower.startsWith('select * from users where id = ?')) {
           return (tables.users.get(bindings[0]) ?? null) as T | null;
         }
+        if (lower.startsWith('select nickname_code from user_wiki where user_id = ?')) {
+          const row = tables.user_wiki.get(bindings[0]);
+          return (row ? { nickname_code: row.nickname_code ?? null } : null) as T | null;
+        }
+        if (lower.startsWith('select user_id from user_wiki where user_id = ?')) {
+          const row = tables.user_wiki.get(bindings[0]);
+          return (row ? { user_id: row.user_id } : null) as T | null;
+        }
+        if (lower.startsWith('select user_id, nickname_analysis_json from user_wiki where nickname_code = ?')) {
+          const code = bindings[0];
+          for (const row of tables.user_wiki.values()) {
+            if (row.nickname_code === code) {
+              return { user_id: row.user_id, nickname_analysis_json: row.nickname_analysis_json } as T;
+            }
+          }
+          return null as T | null;
+        }
         if (lower.startsWith('select') && lower.includes('llm_usage_log')) {
           // rate-limit: SELECT COUNT(*) FROM llm_usage_log WHERE user_id=? AND context=? AND timestamp>=?
           if (lower.includes('and context') && bindings.length === 3) {
@@ -86,11 +103,11 @@ export function createTestD1(): TestD1 {
               age_gate_passed: 0,
             });
           }
-          return { success: true } as any;
+          return { success: true, meta: { changes: 0 } } as any;
         }
         if (lower.startsWith('insert into user_wiki')) {
           const [userId, json, createdAt, updatedAt] = bindings;
-          // upsert 시뮬
+          const existing = tables.user_wiki.get(userId);
           tables.user_wiki.set(userId, {
             user_id: userId,
             nickname_analysis_json: json,
@@ -102,10 +119,20 @@ export function createTestD1(): TestD1 {
             hangno_axis: 0,
             axis_locked_at: null,
             context_change_log_json: null,
+            nickname_code: existing?.nickname_code ?? null,
             created_at: createdAt,
             updated_at: updatedAt,
           });
-          return { success: true } as any;
+          return { success: true, meta: { changes: 1 } } as any;
+        }
+        if (lower.startsWith('update user_wiki set nickname_code')) {
+          const [code, userId] = bindings;
+          const row = tables.user_wiki.get(userId);
+          if (row && row.nickname_code == null) {
+            row.nickname_code = code;
+            return { success: true, meta: { changes: 1 } } as any;
+          }
+          return { success: true, meta: { changes: 0 } } as any;
         }
         if (lower.startsWith('insert into llm_usage_log')) {
           const [userId, model, inTok, outTok, cost, ctx, isPrem, ts] = bindings;
@@ -119,9 +146,9 @@ export function createTestD1(): TestD1 {
             is_premium: isPrem,
             timestamp: ts,
           });
-          return { success: true } as any;
+          return { success: true, meta: { changes: 0 } } as any;
         }
-        return { success: true } as any;
+        return { success: true, meta: { changes: 0 } } as any;
       },
     };
     return stmt;

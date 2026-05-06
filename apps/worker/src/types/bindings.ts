@@ -19,4 +19,9 @@ export interface Bindings {
 
   /** Google AI Studio API key — .dev.vars / wrangler secret put */
   GEMINI_API_KEY?: string;
+
+  /** paid-api-guard: 사용자당 24h 누적 LLM 비용 캡 (USD) — 기본 0.10 */
+  USER_DAILY_BUDGET_USD?: string;
+  /** paid-api-guard: 전 시스템 24h 누적 LLM 비용 캡 (USD) — 기본 1.00 */
+  DAILY_BUDGET_USD?: string;
 }

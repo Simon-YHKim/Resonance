@@ -20,6 +20,7 @@ export interface UserWikiRow {
   hangno_axis: number;
   axis_locked_at: number | null;
   context_change_log_json: string | null;
+  nickname_code: string | null;
   created_at: number;
   updated_at: number;
 }

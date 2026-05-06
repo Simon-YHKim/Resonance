@@ -410,6 +410,7 @@ export const MOBILE_HTML = `<!doctype html>
         return;
       }
       state.analysis = r.body.user_wiki.nickname_analysis;
+      state.nicknameCode = r.body.user_wiki.nickname_code || null;
       state.analysisMeta = r.body.meta;
       renderCharacter();
       hide($stageNickname);
@@ -461,6 +462,17 @@ export const MOBILE_HTML = `<!doctype html>
           '<div class="field-label">주요 키워드</div>' +
           '<div class="keywords">' + keywordsHtml + '</div>' +
         '</div>' +
+        (state.nicknameCode ?
+          '<div class="field">' +
+            '<div class="field-label">내 잔향 코드</div>' +
+            '<div style="display:flex;gap:8px;align-items:center;margin-top:6px">' +
+              '<span id="my-code" style="font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;letter-spacing:3px;color:var(--fg)">' +
+              escapeHtml(state.nicknameCode) +
+              '</span>' +
+              '<button class="ghost" id="copy-code" type="button" style="font-size:12px;padding:4px 10px">복사</button>' +
+            '</div>' +
+            '<div style="color:var(--fg-dim);font-size:11px;margin-top:6px">친구가 이 코드로 너의 잔향을 들여다본다.</div>' +
+          '</div>' : '') +
         '<div class="field">' +
           '<div class="field-label">5체 보스의 자리 — 시간 역행</div>' +
           '<ul class="boss-list">' + bossHtml + '</ul>' +
@@ -483,6 +495,25 @@ export const MOBILE_HTML = `<!doctype html>
 
     document.getElementById('enter-combat').addEventListener('click', startCombat);
     document.getElementById('reset-from-character').addEventListener('click', resetAll);
+    var $copyBtn = document.getElementById('copy-code');
+    if ($copyBtn) {
+      $copyBtn.addEventListener('click', function () {
+        var code = state.nicknameCode;
+        if (!code) return;
+        var done = function () {
+          $copyBtn.textContent = '복사됨';
+          setTimeout(function () { $copyBtn.textContent = '복사'; }, 1500);
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(code).then(done).catch(done);
+        } else {
+          var ta = document.createElement('textarea');
+          ta.value = code; document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta); done();
+        }
+      });
+    }
   }
 
   // ────────────────────────────────────────────────────
