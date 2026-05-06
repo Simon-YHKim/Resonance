@@ -18,7 +18,12 @@
 | 0007 | `0007_llm_usage_log.sql` | `llm_usage_log` | 토큰 사용량·비용 측정 |
 | 0008 | `0008_violation_log.sql` | `violation_log` | 안전 위반 로그 (자해·미성년자 보호) |
 
-각 `.sql` 마이그레이션마다 `.down.sql` 롤백 파일이 동봉됩니다.
+각 마이그레이션의 롤백 파일은 `migrations/down/<번호>_<이름>.down.sql` 에 별도 폴더로 보관.
+
+> ⚠ **Wrangler ordering 주의**: `wrangler d1 migrations apply` 는
+> `migrations/` 안의 모든 `.sql` 파일을 알파벳 순으로 forward 마이그레이션으로 적용합니다.
+> 따라서 `down/` 하위 폴더로 분리해야 forward 마이그레이션과 섞이지 않습니다.
+> 롤백은 `wrangler d1 execute --file=migrations/down/<번호>_<이름>.down.sql` 로 수동.
 
 ---
 

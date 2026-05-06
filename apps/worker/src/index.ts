@@ -12,15 +12,29 @@
 import { Hono } from 'hono';
 import type { Bindings } from './types/bindings';
 import { characterRouter } from './routes/character';
+import { MOBILE_HTML } from './ui/mobile-html';
 
 const app = new Hono<{ Bindings: Bindings }>();
+
+// 모바일 친화 HTML UI — wrangler dev tunnel 또는 Cloudflare 배포 시 즉시 동작
+app.get('/', (c) =>
+  c.html(MOBILE_HTML, 200, {
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+  }),
+);
 
 app.get('/api/health', (c) =>
   c.json({
     name: 'resonance-worker',
     phase: 1,
     status: 'live',
-    endpoints: ['GET /api/health', 'POST /api/character/analyze', 'GET /api/character/wiki'],
+    endpoints: [
+      'GET /',
+      'GET /api/health',
+      'POST /api/character/analyze',
+      'GET /api/character/wiki',
+    ],
   }),
 );
 
