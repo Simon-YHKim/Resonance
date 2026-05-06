@@ -5,7 +5,7 @@
  */
 
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -15,10 +15,18 @@ import {
 } from 'react-native';
 import { ResonanceApiError } from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
+import { Flash } from '@/components/Flash';
 import { SafetyModal } from '@/components/SafetyModal';
 import { StaminaBar } from '@/components/StaminaBar';
+import { loadingForCombatStart } from '@/lib/loading-copy';
 import { api } from '@/services/api';
 import { useGame } from '@/store/gameStore';
+
+/** 외형 키 → border/배경 색 매핑 (cosmetic 보유 시 적용) */
+const COSMETIC_STYLES: Record<string, { border: string; tint: string }> = {
+  grey: { border: 'border-fg-dim/40', tint: 'bg-bg-elevated/40' },
+  fog: { border: 'border-resonance/50', tint: 'bg-resonance/10' },
+};
 
 export default function CharacterScreen() {
   const analysis = useGame((s) => s.analysis);
@@ -41,9 +49,11 @@ export default function CharacterScreen() {
     );
   }
 
+  const [combatLoadingMsg, setCombatLoadingMsg] = useState('');
   const startCombat = async () => {
     setError(null);
     setCombatBusy(true);
+    setCombatLoadingMsg(loadingForCombatStart());
     try {
       const res = await api.combatStart();
       setCombat(res.state);
@@ -54,6 +64,32 @@ export default function CharacterScreen() {
       setCombatBusy(false);
     }
   };
+
+  // 인벤토리에서 cosmetic 첫 번째 → 외형 적용 (간단 fetch, character mount 시 1회)
+  const cosmeticKey = useGame((s) => s.cosmeticKey);
+  const setCosmeticKey = useGame((s) => s.setCosmeticKey);
+  useEffect(() => {
+    if (cosmeticKey !== null) return; // 이미 fetch 됨
+    (async () => {
+      try {
+        const baseUrl = (api as unknown as { config: { baseUrl: string } }).config.baseUrl;
+        const r = await fetch(`${baseUrl}/api/shop/inventory`, {
+          headers: { 'X-Dev-User-Id': 'user_dev_local' },
+        });
+        const body = await r.json();
+        if (body?.success && Array.isArray(body.items)) {
+          const cos = body.items.find((it: { category: string; effect: { skin?: string } }) => it.category === 'cosmetic' && it.effect?.skin);
+          setCosmeticKey(cos?.effect?.skin ?? '');
+        } else {
+          setCosmeticKey('');
+        }
+      } catch {
+        setCosmeticKey('');
+      }
+    })();
+  }, [cosmeticKey, setCosmeticKey]);
+
+  const cosmetic = (cosmeticKey && COSMETIC_STYLES[cosmeticKey]) ?? null;
 
   const setAnalysis = useGame((s) => s.setAnalysis);
   const setSafetyHigh = useGame((s) => s.setSafetyHigh);
@@ -95,7 +131,7 @@ export default function CharacterScreen() {
   return (
     <ScrollView className="flex-1 bg-bg-primary" contentContainerStyle={{ padding: 24, paddingTop: 48 }}>
       <StaminaBar onShopPress={() => router.push('/shop')} />
-      <View className="border border-resonance/40 rounded-lg p-5 mb-5">
+      <View className={`border rounded-lg p-5 mb-5 ${cosmetic ? `${cosmetic.border} ${cosmetic.tint}` : 'border-resonance/40'}`}>
         <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-2">
           잔향이 본 너
         </Text>
@@ -175,9 +211,15 @@ export default function CharacterScreen() {
         </View>
       ) : null}
 
+      {cosmetic ? (
+        <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-3">
+          외형 · {cosmeticKey === 'fog' ? '안개 자락' : '잿빛 외투'}
+        </Text>
+      ) : null}
+
       <View className="gap-3">
         <ActionButton onPress={startCombat} disabled={isCombatBusy || rerolling}>
-          {isCombatBusy ? '잊혀진 자가 일어선다...' : '잊혀진 자에게 다가간다'}
+          {isCombatBusy ? (combatLoadingMsg || '잊혀진 자가 일어선다...') : '잊혀진 자에게 다가간다'}
         </ActionButton>
         <ActionButton variant="ghost" onPress={() => router.push('/story')}>
           스토리 1장 — 남겨진 이들 (5체)
@@ -197,6 +239,7 @@ export default function CharacterScreen() {
       </View>
 
       <SafetyModal />
+      <Flash />
     </ScrollView>
   );
 }

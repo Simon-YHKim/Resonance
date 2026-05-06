@@ -23,7 +23,9 @@ import {
   RESONANCE_TIER_LABELS,
 } from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
+import { Flash, tierEnterMessage } from '@/components/Flash';
 import { SafetyModal } from '@/components/SafetyModal';
+import { loadingForCombatTurn } from '@/lib/loading-copy';
 import { api } from '@/services/api';
 import { useGame } from '@/store/gameStore';
 
@@ -39,6 +41,7 @@ export default function CombatScreen() {
   const error = useGame((s) => s.error);
 
   const [userText, setUserText] = useState('');
+  const [loadingMsg, setLoadingMsg] = useState('');
 
   if (!combat) {
     return (
@@ -52,14 +55,29 @@ export default function CombatScreen() {
   }
 
   const turn = async (action: CombatAction) => {
+    if (!combat) return;
     setError(null);
     setBusy(true);
+    setLoadingMsg(loadingForCombatTurn(action));
+    const prevTier = getResonanceTier(combat.resonance);
     try {
       const res = await api.combatTurn(combat, action, userText.trim() || undefined);
       setCombat(res.state);
       setLastTurnResult(res.turnResult);
       const s = (res as unknown as { stamina?: { current: number; max_daily: number; willResetAtMs: number } }).stamina;
       if (s) useGame.getState().setStamina(s);
+      // 임계 진입 flash
+      const newTier = getResonanceTier(res.state.resonance);
+      if (newTier !== prevTier) {
+        const m = tierEnterMessage(newTier);
+        if (m) useGame.getState().flash(m);
+        useGame.getState().setLastTier(newTier);
+      }
+      // dust 적립 flash
+      const dust = (res as unknown as { dustEarned?: number }).dustEarned;
+      if (dust && dust > 0) {
+        useGame.getState().flash(`잔향가루 +${dust} — 거리에 한 결 남았어요.`);
+      }
       if (res.turnResult.safety_concern === 'high') {
         setSafetyHigh(true);
       }
@@ -179,10 +197,18 @@ export default function CombatScreen() {
         <ActionButton variant="ghost" onPress={() => turn('flee')} disabled={isBusy}>
           도망
         </ActionButton>
-        {isBusy ? <ActivityIndicator size="small" color="#B89DD0" className="mt-2" /> : null}
+        {isBusy ? (
+          <View className="items-center mt-2">
+            <ActivityIndicator size="small" color="#B89DD0" />
+            {loadingMsg ? (
+              <Text className="text-fg-dim text-xs italic mt-2">{loadingMsg}</Text>
+            ) : null}
+          </View>
+        ) : null}
       </View>
 
       <SafetyModal />
+      <Flash />
     </ScrollView>
     </KeyboardAvoidingView>
   );

@@ -26,7 +26,9 @@ import {
   RESONANCE_TIER_LABELS,
 } from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
+import { Flash, tierEnterMessage } from '@/components/Flash';
 import { SafetyModal } from '@/components/SafetyModal';
+import { loadingForCombatTurn } from '@/lib/loading-copy';
 import { api } from '@/services/api';
 import { useGame } from '@/store/gameStore';
 
@@ -47,6 +49,7 @@ export default function StoryScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userText, setUserText] = useState('');
+  const [loadingMsg, setLoadingMsg] = useState('');
   const [storyOutcome, setStoryOutcome] = useState<string | null>(null);
   const [dustTotal, setDustTotal] = useState(0);
 
@@ -94,10 +97,23 @@ export default function StoryScreen() {
     if (!state) return;
     setError(null);
     setBusy(true);
+    setLoadingMsg(loadingForCombatTurn(action));
+    const prevTier = getResonanceTier(state.resonance);
     try {
       const res = await api.storyTurn(state, action, 'ch1', userText.trim() || undefined);
       if (res.turnResult.safety_concern === 'high') setSafetyHigh(true);
       setProgress(res.progress);
+      // 임계 진입 flash
+      const newTier = getResonanceTier(res.state.resonance);
+      if (newTier !== prevTier) {
+        const m = tierEnterMessage(newTier);
+        if (m) useGame.getState().flash(m);
+        useGame.getState().setLastTier(newTier);
+      }
+      // dust 적립 flash
+      if (res.dustEarned && res.dustEarned > 0) {
+        useGame.getState().flash(`잔향가루 +${res.dustEarned} — 잊혀진 자가 너에게 한 결을 남겼어요.`);
+      }
       setDustTotal((d) => d + (res.dustEarned ?? 0));
 
       if (res.nextEnemy && res.nextEnemy.starterState) {
@@ -119,15 +135,20 @@ export default function StoryScreen() {
   };
 
   if (storyOutcome) {
+    // origin 단계 (잔잔 ≥ 100) 도달 시 화해 — 깊은 결말 텍스트로 분기
+    const reachedOrigin = state ? getResonanceTier(state.resonance) === 'origin' : false;
     const titles: Record<string, string> = {
-      reconciled: '화해 — 잔향이 깊게 머물렀다',
+      reconciled: reachedOrigin
+        ? '화해 — 잔향이 너의 이름을 부른다'
+        : '화해 — 잔향이 깊게 머물렀다',
       resealed: '재봉인 — 다시 안개 속으로',
       failed: '거리가 — 아직 너를 받지 못했다',
       fled: '도주 — 잔향이 한 발짝 멀어진다',
     };
     const texts: Record<string, string> = {
-      reconciled:
-        '5체의 잊혀진 자가 너의 결을 받아냈다. 그들은 안개 속으로 사라지지 않았다 — 너의 잔향에 머물렀다.',
+      reconciled: reachedOrigin
+        ? '원의 답에 닿은 너에게 — 5체는 더는 잊혀지지 않는다. 그들은 너의 안에서 자기 이름을 가졌고, 너는 너의 결을 가졌다. 거리가 처음으로 두 사람의 그림자를 받아냈다.'
+        : '5체의 잊혀진 자가 너의 결을 받아냈다. 그들은 안개 속으로 사라지지 않았다 — 너의 잔향에 머물렀다.',
       resealed:
         '5체를 격파했지만, 그들은 다시 안개 속으로 봉인된다. 잔잔이 깊어지면 다음번엔 화해할 수 있을지도.',
       failed:
@@ -282,10 +303,18 @@ export default function StoryScreen() {
           <ActionButton variant="ghost" onPress={() => turn('flee')} disabled={busy}>
             도망
           </ActionButton>
-          {busy ? <ActivityIndicator size="small" color="#B89DD0" className="mt-2" /> : null}
+          {busy ? (
+            <View className="items-center mt-2">
+              <ActivityIndicator size="small" color="#B89DD0" />
+              {loadingMsg ? (
+                <Text className="text-fg-dim text-xs italic mt-2">{loadingMsg}</Text>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         <SafetyModal />
+        <Flash />
       </ScrollView>
     </KeyboardAvoidingView>
   );

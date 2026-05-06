@@ -13,6 +13,7 @@ import { ActivityIndicator, Text, TextInput, View } from 'react-native';
 import { ResonanceApiError } from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
 import { VoiceBubble } from '@/components/VoiceBubble';
+import { loadingForAnalyze } from '@/lib/loading-copy';
 import { api } from '@/services/api';
 import { useGame } from '@/store/gameStore';
 
@@ -124,7 +125,10 @@ export default function NicknameScreen() {
           {isAnalyzing ? '분석 중...' : '잔향에 들어간다'}
         </ActionButton>
         {isAnalyzing && (
-          <ActivityIndicator size="small" color="#B89DD0" className="my-2" />
+          <View className="items-center my-2">
+            <ActivityIndicator size="small" color="#B89DD0" />
+            <Text className="text-fg-dim text-xs italic mt-2">{loadingForAnalyze()}</Text>
+          </View>
         )}
         <ActionButton variant="ghost" onPress={() => router.back()}>
           ← 처음으로

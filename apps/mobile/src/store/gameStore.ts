@@ -31,6 +31,13 @@ interface GameState {
   // 스테미나 (Phase 2 BM)
   stamina: { current: number; max_daily: number; willResetAtMs: number } | null;
 
+  // 잔잔 임계 추적 + flash 메시지 (UI 체감)
+  lastTier: 'descend' | 'empathy' | 'memory' | 'origin';
+  flashMessage: string | null;
+
+  // 외형 (상점 cosmetic 보유 시)
+  cosmeticKey: string | null;
+
   setPendingNickname: (n: string | null) => void;
   setAnalyzing: (v: boolean) => void;
   setAnalysis: (a: NicknameAnalysis | null, code?: string | null) => void;
@@ -44,6 +51,9 @@ interface GameState {
   setSafetyHigh: (v: boolean) => void;
 
   setStamina: (s: { current: number; max_daily: number; willResetAtMs: number } | null) => void;
+  setLastTier: (t: 'descend' | 'empathy' | 'memory' | 'origin') => void;
+  flash: (msg: string | null) => void;
+  setCosmeticKey: (k: string | null) => void;
 
   resetCombat: () => void;
   reset: () => void;
@@ -63,6 +73,9 @@ export const useGame = create<GameState>((set) => ({
 
   safetyHigh: false,
   stamina: null,
+  lastTier: 'descend',
+  flashMessage: null,
+  cosmeticKey: null,
 
   setPendingNickname: (n) => set({ pendingNickname: n }),
   setAnalyzing: (v) => set({ isAnalyzing: v }),
@@ -76,6 +89,9 @@ export const useGame = create<GameState>((set) => ({
 
   setSafetyHigh: (v) => set({ safetyHigh: v }),
   setStamina: (s) => set({ stamina: s }),
+  setLastTier: (t) => set({ lastTier: t }),
+  flash: (msg) => set({ flashMessage: msg }),
+  setCosmeticKey: (k) => set({ cosmeticKey: k }),
 
   resetCombat: () =>
     set({
@@ -98,5 +114,8 @@ export const useGame = create<GameState>((set) => ({
       lastTurnResult: null,
       safetyHigh: false,
       stamina: null,
+      lastTier: 'descend',
+      flashMessage: null,
+      cosmeticKey: null,
     }),
 }));
