@@ -36,6 +36,13 @@ export default function NicknameScreen() {
       const res = await api.analyzeNickname(trimmed);
       const analysis = res.user_wiki.nickname_analysis;
       setAnalysis(analysis, res.user_wiki.nickname_code ?? null);
+      if ((res as unknown as { stamina?: { current: number; max_daily: number; willResetAtMs: number } }).stamina) {
+        useGame
+          .getState()
+          .setStamina(
+            (res as unknown as { stamina: { current: number; max_daily: number; willResetAtMs: number } }).stamina,
+          );
+      }
       if (analysis.safety_concern === 'high') {
         useGame.getState().setSafetyHigh(true);
       }

@@ -30,6 +30,7 @@ import {
   findUserByCode,
   isValidCode,
 } from '../lib/character-code';
+import { consumeStamina, getStamina } from '../lib/stamina';
 
 /** paid-api-guard: 사용자당 시간당 닉네임 분석 호출 수 */
 const ANALYZE_RATE_LIMIT_PER_HOUR = 5;
@@ -92,12 +93,31 @@ characterRouter.post('/analyze', async (c) => {
     );
   }
 
+  // 2. users 행 보장 (FK) — stamina 차감 전에 user 행 필요
+  await ensureUserExists(c.env.DB, userId);
+
+  // Phase 2 — 스테미나 차감 (analyze=5)
+  // 같은 닉네임 재분석(reroll)은 wiki 행 존재 여부로 판단
+  const existingWiki = await c.env.DB.prepare('SELECT user_id FROM user_wiki WHERE user_id = ?')
+    .bind(userId)
+    .first();
+  const stamCtx = existingWiki ? 'reroll' : 'analyze';
+  const stam = await consumeStamina(c.env.DB, userId, stamCtx);
+  if (!stam.allowed) {
+    return c.json(
+      {
+        success: false,
+        error: '잔향이 잠시 잦아드는 시간입니다. 자정에 다시 깨어나요.',
+        code: 'STAMINA_EMPTY',
+        stamina: { current: stam.current, max_daily: stam.max_daily, cost: stam.cost, willResetAtMs: stam.willResetAtMs },
+      },
+      429,
+    );
+  }
+
   try {
     // 1. LLM 분석 (Mock 또는 Haiku)
     const result = await analyzeNickname(body.nickname, c.env);
-
-    // 2. users 행 보장 (FK)
-    await ensureUserExists(c.env.DB, userId);
 
     // 3. user_wiki upsert
     await upsertUserWiki(c.env.DB, userId, result.analysis);
@@ -122,6 +142,12 @@ characterRouter.post('/analyze', async (c) => {
         user_id: userId,
         nickname_analysis: result.analysis,
         nickname_code: code,
+      },
+      stamina: {
+        current: stam.current,
+        max_daily: stam.max_daily,
+        cost: stam.cost,
+        willResetAtMs: stam.willResetAtMs,
       },
       meta: {
         model: result.model,
@@ -183,6 +209,27 @@ characterRouter.get('/wiki', async (c) => {
       created_at: row.created_at,
       updated_at: row.updated_at,
     },
+  });
+});
+
+/**
+ * GET /api/character/stamina — 내 스테미나 상태.
+ *
+ * Phase 2 BM — UI 게이지 노출용. 자동 reset 포함.
+ */
+characterRouter.get('/stamina', async (c) => {
+  const userId = getCurrentUserId(c);
+  if (!userId) {
+    return c.json(
+      { success: false, error: '로그인이 필요합니다.', code: 'UNAUTHORIZED' },
+      401,
+    );
+  }
+  await ensureUserExists(c.env.DB, userId);
+  const s = await getStamina(c.env.DB, userId);
+  return c.json({
+    success: true,
+    stamina: { current: s.current, max_daily: s.max_daily, willResetAtMs: s.willResetAtMs },
   });
 });
 

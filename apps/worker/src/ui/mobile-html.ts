@@ -299,6 +299,9 @@ export const MOBILE_HTML = `<!doctype html>
   <!-- Stage 4: 결말 -->
   <div id="stage-result" class="stage hidden"></div>
 
+  <!-- Stage 5: 상점 -->
+  <div id="stage-shop" class="stage hidden"></div>
+
   <!-- 공통 영역 -->
   <div id="error" class="error" style="display:none"></div>
   <div id="loading" class="loading" style="display:none">
@@ -338,8 +341,10 @@ export const MOBILE_HTML = `<!doctype html>
     userId: 'web_' + Date.now() + '_' + Math.floor(Math.random() * 9999),
     nickname: '',
     analysis: null,
+    nicknameCode: null,
     combat: null,
     finalOutcome: null,
+    stamina: null,
   };
 
   // ────────────────────────────────────────────────────
@@ -352,6 +357,7 @@ export const MOBILE_HTML = `<!doctype html>
   var $stageCharacter = document.getElementById('stage-character');
   var $stageCombat = document.getElementById('stage-combat');
   var $stageResult = document.getElementById('stage-result');
+  var $stageShop = document.getElementById('stage-shop');
   var $error = document.getElementById('error');
   var $loading = document.getElementById('loading');
   var $loadingText = document.getElementById('loading-text');
@@ -371,6 +377,25 @@ export const MOBILE_HTML = `<!doctype html>
     $error.style.display = '';
   }
   function clearError() { $error.style.display = 'none'; $error.textContent = ''; }
+
+  // 스테미나 게이지 (Phase 2 BM)
+  function buildStaminaBar(s) {
+    var pct = Math.max(0, Math.min(100, (s.current / s.max_daily) * 100));
+    var diff = s.willResetAtMs - Date.now();
+    var hh = Math.max(0, Math.floor(diff / 3600000));
+    var mm = Math.max(0, Math.floor((diff % 3600000) / 60000));
+    var resetText = hh > 0 ? hh + '시간 ' + mm + '분 후' : mm + '분 후';
+    var color = pct > 30 ? 'var(--resonance)' : '#ffb1b1';
+    return '<div style="margin-bottom:14px">' +
+      '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">' +
+        '<span style="color:var(--fg-dim);font-size:10px;letter-spacing:3px;text-transform:uppercase">잔향</span>' +
+        '<span style="color:var(--fg-muted);font-size:11px">' + s.current + ' / ' + s.max_daily + ' · ' + resetText + ' 회복 · <a href="#" id="open-shop-link" style="color:var(--resonance);text-decoration:underline">상점</a></span>' +
+      '</div>' +
+      '<div style="height:6px;background:var(--bg-elevated);border-radius:3px;overflow:hidden">' +
+        '<div style="height:100%;background:' + color + ';width:' + pct + '%;transition:width 600ms cubic-bezier(.4,0,.6,1)"></div>' +
+      '</div>' +
+    '</div>';
+  }
 
   // 자살예방법 §27조의8 — safety_concern='high' 시 1393 안내 모달
   // 5초 dwell (X 비활성) + 복수 채널 (1393 / 1388 / 1577-0199)
@@ -452,6 +477,7 @@ export const MOBILE_HTML = `<!doctype html>
       }
       state.analysis = r.body.user_wiki.nickname_analysis;
       state.nicknameCode = r.body.user_wiki.nickname_code || null;
+      if (r.body.stamina) state.stamina = r.body.stamina;
       // 닉네임에서 자살 위험 신호 감지 시 1393 안내 (자살예방법 §27조의8)
       if (state.analysis && state.analysis.safety_concern === 'high') {
         showSafetyModal();
@@ -503,7 +529,9 @@ export const MOBILE_HTML = `<!doctype html>
         '<span style="color:var(--fg-muted);font-size:12px">힘들면 자살예방상담 — 1393 (24시간 무료). 너의 결을 먼저 듣고 싶어요.</span>' +
       '</div>' : '';
 
+    var staminaHtml = state.stamina ? buildStaminaBar(state.stamina) : '';
     $stageCharacter.innerHTML =
+      staminaHtml +
       '<div class="card">' +
         '<div class="card-label">잔향이 본 너</div>' +
         '<div class="voice-address">' + escapeHtml(a.the_Voice_호칭 || '') + '</div>' +
@@ -555,6 +583,10 @@ export const MOBILE_HTML = `<!doctype html>
 
     document.getElementById('enter-combat').addEventListener('click', startCombat);
     document.getElementById('reset-from-character').addEventListener('click', resetAll);
+    var $shopLink = document.getElementById('open-shop-link');
+    if ($shopLink) {
+      $shopLink.addEventListener('click', function (e) { e.preventDefault(); openShop(); });
+    }
     var $reroll = document.getElementById('reroll-analysis');
     if ($reroll) {
       $reroll.addEventListener('click', function () {
@@ -690,6 +722,7 @@ export const MOBILE_HTML = `<!doctype html>
         return;
       }
       state.combat = r.body.state;
+      if (r.body.stamina) state.stamina = r.body.stamina;
       // safety_concern=high 시 1393 안내 모달 (자살예방법 §27조의8)
       if (r.body.turnResult && r.body.turnResult.safety_concern === 'high') {
         showSafetyModal();
@@ -771,20 +804,100 @@ export const MOBILE_HTML = `<!doctype html>
   // ────────────────────────────────────────────────────
   // Reset
   // ────────────────────────────────────────────────────
+  // 상점 stage (Phase 2 BM)
+  function openShop() {
+    clearError();
+    setLoading(true, '상점을 여는 중');
+    Promise.all([
+      fetch('/api/shop/items').then(function (r) { return r.json(); }),
+      fetch('/api/shop/inventory', { headers: { 'X-Dev-User-Id': state.userId } }).then(function (r) { return r.json(); }),
+    ]).then(function (results) {
+      setLoading(false);
+      var itemsRes = results[0];
+      var invRes = results[1];
+      var items = (itemsRes && itemsRes.items) ? itemsRes.items : [];
+      var dust = (invRes && invRes.resonance_dust) || 0;
+      var inv = (invRes && invRes.items) ? invRes.items : [];
+      var currencyLabel = { resonance_dust: '잔향가루', krw: '₩', free: '무료' };
+      var itemsHtml = items.map(function (it) {
+        var priceStr = it.currency === 'free' ? '받기' : it.price.toLocaleString();
+        var label = currencyLabel[it.currency] || it.currency;
+        return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;margin-bottom:10px">' +
+          '<div style="font-weight:600;margin-bottom:4px">' + escapeHtml(it.display_name) + '</div>' +
+          '<div style="color:var(--fg-muted);font-size:12px;margin-bottom:8px">' + escapeHtml(it.description) + '</div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center">' +
+            '<span style="color:var(--fg-dim);font-size:12px">' + label + ' <span style="color:var(--fg-primary)">' + priceStr + '</span></span>' +
+            '<button class="ghost" data-item-id="' + escapeHtml(it.item_id) + '" data-shop-buy="1" style="font-size:12px;padding:6px 12px">잔향에 새기기</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      var invHtml = inv.length === 0 ? '' :
+        '<div style="margin-top:18px"><div class="card-label">나의 잔향 — 보유</div>' +
+        inv.map(function (i) { return '<div style="display:flex;justify-content:space-between;padding:4px 0"><span>' + escapeHtml(i.display_name) + '</span><span style="color:var(--fg-muted)">×' + i.quantity + '</span></div>'; }).join('') +
+        '</div>';
+      $stageShop.innerHTML =
+        '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px">' +
+          '<span style="color:var(--fg-dim);font-size:10px;letter-spacing:3px;text-transform:uppercase">상점</span>' +
+          '<span style="color:var(--fg-muted);font-size:12px">잔향가루 <span style="color:var(--fg-primary);font-size:16px">' + dust + '</span></span>' +
+        '</div>' +
+        '<div id="shop-flash"></div>' +
+        itemsHtml + invHtml +
+        '<button class="ghost" id="close-shop" type="button" style="margin-top:18px">← 거리로 돌아가기</button>';
+      hide($stageCharacter); hide($stageCombat); hide($stageResult); show($stageShop);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // bind
+      var btns = $stageShop.querySelectorAll('[data-shop-buy="1"]');
+      Array.prototype.forEach.call(btns, function (b) {
+        b.addEventListener('click', function () { purchaseItem(b.getAttribute('data-item-id')); });
+      });
+      document.getElementById('close-shop').addEventListener('click', function () {
+        hide($stageShop);
+        if (state.combat) show($stageCombat); else show($stageCharacter);
+      });
+    }).catch(function (err) {
+      setLoading(false);
+      showError('상점 호출 실패: ' + err.message);
+    });
+  }
+
+  function purchaseItem(itemId) {
+    api('/api/shop/purchase', { item_id: itemId }).then(function (r) {
+      if (!r.res.ok || !r.body.success) {
+        var msg = (r.body && r.body.error) || '구매 실패';
+        var $f = document.getElementById('shop-flash');
+        if ($f) $f.innerHTML = '<div style="color:#ffb1b1;font-size:13px;margin-bottom:10px">' + escapeHtml(msg) + '</div>';
+        return;
+      }
+      var $f = document.getElementById('shop-flash');
+      if ($f) $f.innerHTML = '<div style="color:var(--resonance);font-size:13px;margin-bottom:10px">' + escapeHtml(r.body.item.display_name) + ' — 잔향이 한 번 머물렀어요.</div>';
+      // stamina 갱신 (포션 구매)
+      fetch('/api/character/stamina', { headers: { 'X-Dev-User-Id': state.userId } })
+        .then(function (rr) { return rr.json(); })
+        .then(function (sr) { if (sr && sr.stamina) state.stamina = sr.stamina; });
+      // refresh shop
+      setTimeout(openShop, 300);
+    }).catch(function (err) {
+      showError('구매 호출 실패: ' + err.message);
+    });
+  }
+
   function resetAll() {
     state = {
       userId: 'web_' + Date.now() + '_' + Math.floor(Math.random() * 9999),
       nickname: '',
       analysis: null,
+      nicknameCode: null,
       combat: null,
       finalOutcome: null,
+      stamina: null,
     };
     $nickname.value = '';
     $count.textContent = '0';
     $stageCharacter.innerHTML = '';
     $stageCombat.innerHTML = '';
     $stageResult.innerHTML = '';
-    hide($stageCharacter); hide($stageCombat); hide($stageResult);
+    if ($stageShop) $stageShop.innerHTML = '';
+    hide($stageCharacter); hide($stageCombat); hide($stageResult); if ($stageShop) hide($stageShop);
     show($stageNickname);
     clearError();
     window.scrollTo({ top: 0, behavior: 'smooth' });

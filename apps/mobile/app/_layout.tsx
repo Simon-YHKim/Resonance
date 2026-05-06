@@ -27,6 +27,7 @@ export default function RootLayout() {
         <Stack.Screen name="character" />
         <Stack.Screen name="combat" />
         <Stack.Screen name="result" />
+        <Stack.Screen name="shop" />
       </Stack>
     </SafeAreaProvider>
   );

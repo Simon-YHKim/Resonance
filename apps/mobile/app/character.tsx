@@ -16,6 +16,7 @@ import {
 import { ResonanceApiError } from '@resonance/shared';
 import { ActionButton } from '@/components/ActionButton';
 import { SafetyModal } from '@/components/SafetyModal';
+import { StaminaBar } from '@/components/StaminaBar';
 import { api } from '@/services/api';
 import { useGame } from '@/store/gameStore';
 
@@ -56,6 +57,7 @@ export default function CharacterScreen() {
 
   const setAnalysis = useGame((s) => s.setAnalysis);
   const setSafetyHigh = useGame((s) => s.setSafetyHigh);
+  const setStamina = useGame((s) => s.setStamina);
   const [rerolling, setRerolling] = useState(false);
   const reroll = async () => {
     if (!analysis) return;
@@ -65,6 +67,8 @@ export default function CharacterScreen() {
       const res = await api.analyzeNickname(analysis.nickname);
       const a = res.user_wiki.nickname_analysis;
       setAnalysis(a, res.user_wiki.nickname_code ?? code);
+      const s = (res as unknown as { stamina?: { current: number; max_daily: number; willResetAtMs: number } }).stamina;
+      if (s) setStamina(s);
       if (a.safety_concern === 'high') setSafetyHigh(true);
     } catch (err) {
       setError(err instanceof ResonanceApiError ? err.message : '잔향이 — 다시 듣기 못했어요.');
@@ -90,6 +94,7 @@ export default function CharacterScreen() {
 
   return (
     <ScrollView className="flex-1 bg-bg-primary" contentContainerStyle={{ padding: 24, paddingTop: 48 }}>
+      <StaminaBar onShopPress={() => router.push('/shop')} />
       <View className="border border-resonance/40 rounded-lg p-5 mb-5">
         <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-2">
           잔향이 본 너

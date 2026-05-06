@@ -19,10 +19,11 @@ import {
   combatTurnMock,
 } from '../lib/combat';
 import { logLLMUsage } from '../lib/usage-logger';
-import { getCurrentUserId } from '../middleware/auth';
+import { getCurrentUserId, ensureUserExists } from '../middleware/auth';
 import { LLMError, detectSafetyConcern } from '../lib/nickname-analyzer';
 import { checkRateLimit } from '../middleware/rate-limit';
 import { checkBudget, parseBudget } from '../lib/budget-guard';
+import { consumeStamina } from '../lib/stamina';
 
 export const combatRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -113,6 +114,25 @@ combatRouter.post('/turn', async (c) => {
   const userBudget = parseBudget(c.env.USER_DAILY_BUDGET_USD, 0.1);
   const globalBudget = parseBudget(c.env.DAILY_BUDGET_USD, 1.0);
   const budget = await checkBudget(c.env.DB, rateLimitKey, userBudget, globalBudget);
+
+  // Phase 2 — 스테미나 차감 (combat turn = 1)
+  let stamSnapshot: { current: number; max_daily: number; cost: number; willResetAtMs: number } | null = null;
+  if (userId !== 'anonymous') {
+    await ensureUserExists(c.env.DB, userId);
+    const stam = await consumeStamina(c.env.DB, userId, 'combat_turn');
+    if (!stam.allowed) {
+      return c.json(
+        {
+          success: false,
+          error: '잔향이 잠시 잦아드는 시간입니다. 자정에 다시 깨어나요.',
+          code: 'STAMINA_EMPTY',
+          stamina: { current: stam.current, max_daily: stam.max_daily, cost: stam.cost, willResetAtMs: stam.willResetAtMs },
+        },
+        429,
+      );
+    }
+    stamSnapshot = { current: stam.current, max_daily: stam.max_daily, cost: stam.cost, willResetAtMs: stam.willResetAtMs };
+  }
 
   // Gemini 호출 (또는 mock)
   const useMock =
@@ -207,6 +227,7 @@ combatRouter.post('/turn', async (c) => {
     turnResult: result,
     outcome,
     isEnded: outcome !== null,
+    stamina: stamSnapshot,
     meta: { model, input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: costUsd },
   });
 });

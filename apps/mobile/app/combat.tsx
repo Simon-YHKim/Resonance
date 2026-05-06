@@ -54,6 +54,8 @@ export default function CombatScreen() {
       const res = await api.combatTurn(combat, action, userText.trim() || undefined);
       setCombat(res.state);
       setLastTurnResult(res.turnResult);
+      const s = (res as unknown as { stamina?: { current: number; max_daily: number; willResetAtMs: number } }).stamina;
+      if (s) useGame.getState().setStamina(s);
       if (res.turnResult.safety_concern === 'high') {
         setSafetyHigh(true);
       }

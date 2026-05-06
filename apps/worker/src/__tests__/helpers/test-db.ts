@@ -11,6 +11,7 @@ interface Tables {
   users: Map<string, any>;
   user_wiki: Map<string, any>;
   llm_usage_log: any[];
+  user_stamina: Map<string, any>;
 }
 
 export interface TestD1 extends D1Database {
@@ -28,6 +29,7 @@ export function createTestD1(): TestD1 {
     users: new Map(),
     user_wiki: new Map(),
     llm_usage_log: [],
+    user_stamina: new Map(),
   };
 
   function makePreparedStatement(sql: string) {
@@ -61,6 +63,9 @@ export function createTestD1(): TestD1 {
             }
           }
           return null as T | null;
+        }
+        if (lower.startsWith('select current, max_daily, last_reset_at from user_stamina')) {
+          return (tables.user_stamina.get(bindings[0]) ?? null) as T | null;
         }
         if (lower.startsWith('select') && lower.includes('llm_usage_log')) {
           // rate-limit: SELECT COUNT(*) FROM llm_usage_log WHERE user_id=? AND context=? AND timestamp>=?
@@ -130,6 +135,52 @@ export function createTestD1(): TestD1 {
           const row = tables.user_wiki.get(userId);
           if (row && row.nickname_code == null) {
             row.nickname_code = code;
+            return { success: true, meta: { changes: 1 } } as any;
+          }
+          return { success: true, meta: { changes: 0 } } as any;
+        }
+        if (lower.startsWith('insert into user_stamina')) {
+          const [uid, current, maxDaily, lastResetAt, createdAt, updatedAt] = bindings;
+          tables.user_stamina.set(uid, {
+            user_id: uid,
+            current,
+            max_daily: maxDaily,
+            last_reset_at: lastResetAt,
+            total_purchased: 0,
+            total_consumed: 0,
+            created_at: createdAt,
+            updated_at: updatedAt,
+          });
+          return { success: true, meta: { changes: 1 } } as any;
+        }
+        if (lower.startsWith('update user_stamina set current = max_daily')) {
+          const [resetAt, updatedAt, uid] = bindings;
+          const row = tables.user_stamina.get(uid);
+          if (row) {
+            row.current = row.max_daily;
+            row.last_reset_at = resetAt;
+            row.updated_at = updatedAt;
+          }
+          return { success: true, meta: { changes: row ? 1 : 0 } } as any;
+        }
+        if (lower.startsWith('update user_stamina') && lower.includes('current = current -')) {
+          const [cost, _consumed, updatedAt, uid, minCurrent] = bindings;
+          const row = tables.user_stamina.get(uid);
+          if (row && row.current >= minCurrent) {
+            row.current -= cost;
+            row.total_consumed += cost;
+            row.updated_at = updatedAt;
+            return { success: true, meta: { changes: 1 } } as any;
+          }
+          return { success: true, meta: { changes: 0 } } as any;
+        }
+        if (lower.startsWith('update user_stamina') && lower.includes('current = current +')) {
+          const [amount, _purchased, updatedAt, uid] = bindings;
+          const row = tables.user_stamina.get(uid);
+          if (row) {
+            row.current += amount;
+            row.total_purchased += amount;
+            row.updated_at = updatedAt;
             return { success: true, meta: { changes: 1 } } as any;
           }
           return { success: true, meta: { changes: 0 } } as any;
