@@ -14,6 +14,7 @@
  */
 
 import { z } from 'zod';
+import { StatsSchema } from './combat';
 
 // 자살예방법 §27조의8 안전 트리거 — 앱이 'high' 받으면 1393 안내 모달
 export const SafetyConcernSchema = z.enum(['none', 'high']);
@@ -35,6 +36,9 @@ export const NicknameAnalysisSchema = z.object({
   the_Voice_호칭: z.string().min(1).max(40),
   description: z.string().min(1).max(800),
   safety_concern: SafetyConcernSchema,
+
+  // 5 스탯 (디아블로식, 1~20) — LLM이 닉네임 결에 맞춰 자동 분배
+  stats: StatsSchema.optional(),
 
   // 부가 (선택 — LLM 자유 채움)
   추정직업: z.string().max(40).optional(),

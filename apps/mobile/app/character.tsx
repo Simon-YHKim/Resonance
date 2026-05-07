@@ -131,6 +131,39 @@ export default function CharacterScreen() {
   return (
     <ScrollView className="flex-1 bg-bg-primary" contentContainerStyle={{ padding: 24, paddingTop: 48 }}>
       <StaminaBar onShopPress={() => router.push('/shop')} />
+      {/* 5 스탯 그리드 (디아블로식) */}
+      {analysis.stats ? (
+        <View className="border border-fg-dim/20 rounded-lg p-4 mb-4">
+          <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-3">
+            결의 결 — 5 스탯
+          </Text>
+          <View className="flex-row flex-wrap">
+            {[
+              ['힘', 'strength', '공격력'],
+              ['민첩', 'dexterity', '회피·선제'],
+              ['지능', 'intelligence', '잔잔'],
+              ['에너지', 'energy', '스테미나'],
+              ['체력', 'vitality', 'HP'],
+            ].map(([label, key, hint]) => {
+              const v = (analysis.stats as Record<string, number>)[key as string];
+              const pct = Math.min(100, (v / 20) * 100);
+              return (
+                <View key={key as string} className="w-1/2 pr-2 mb-3">
+                  <View className="flex-row justify-between items-baseline mb-1">
+                    <Text className="text-fg-primary text-xs font-semibold">{label}</Text>
+                    <Text className="text-resonance text-sm font-display">{v}</Text>
+                  </View>
+                  <View className="h-1 bg-bg-elevated rounded-full overflow-hidden">
+                    <View className="h-full bg-resonance" style={{ width: `${pct}%` }} />
+                  </View>
+                  <Text className="text-fg-dim text-[10px] mt-0.5">{hint}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
       <View className={`border rounded-lg p-5 mb-5 ${cosmetic ? `${cosmetic.border} ${cosmetic.tint}` : 'border-resonance/40'}`}>
         <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-2">
           잔향이 본 너

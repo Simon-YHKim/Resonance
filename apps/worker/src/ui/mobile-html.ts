@@ -511,6 +511,31 @@ export const MOBILE_HTML = `<!doctype html>
     var keywordsHtml = (a.주요키워드 || []).map(function (k) {
       return '<span class="keyword">' + escapeHtml(k) + '</span>';
     }).join('');
+    var statsHtml = '';
+    if (a.stats) {
+      var statRow = function (label, key, hint) {
+        var v = a.stats[key];
+        var pct = Math.min(100, (v / 20) * 100);
+        return '<div style="width:50%;padding-right:8px;margin-bottom:8px;box-sizing:border-box">' +
+          '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">' +
+            '<span style="font-size:12px;font-weight:600">' + label + '</span>' +
+            '<span style="color:var(--resonance);font-size:14px">' + v + '</span>' +
+          '</div>' +
+          '<div style="height:3px;background:var(--bg-elevated);border-radius:2px;overflow:hidden">' +
+            '<div style="height:100%;background:var(--resonance);width:' + pct + '%"></div>' +
+          '</div>' +
+          '<div style="color:var(--fg-dim);font-size:10px;margin-top:1px">' + hint + '</div>' +
+        '</div>';
+      };
+      statsHtml = '<div class="field"><div class="field-label">결의 결 — 5 스탯</div>' +
+        '<div style="display:flex;flex-wrap:wrap;margin-top:6px">' +
+          statRow('힘', 'strength', '공격력') +
+          statRow('민첩', 'dexterity', '회피·선제') +
+          statRow('지능', 'intelligence', '잔잔') +
+          statRow('에너지', 'energy', '스테미나') +
+          statRow('체력', 'vitality', 'HP') +
+        '</div></div>';
+    }
     var boss = a.스토리매칭 || {};
     var bossList = [
       ['1', '남겨진 거인 (30~40대 직장)', boss.보스1자리, boss.보스1회상],
@@ -555,6 +580,7 @@ export const MOBILE_HTML = `<!doctype html>
             '<div class="field-label">주요 키워드</div>' +
             '<div class="keywords">' + keywordsHtml + '</div>' +
           '</div>' : '') +
+        statsHtml +
         (state.nicknameCode ?
           '<div class="field">' +
             '<div class="field-label">내 잔향 코드</div>' +

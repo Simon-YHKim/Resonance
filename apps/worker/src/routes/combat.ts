@@ -26,6 +26,14 @@ import { checkBudget, parseBudget } from '../lib/budget-guard';
 import { consumeStamina } from '../lib/stamina';
 import { earnResonanceDust } from './shop';
 import { STORY_CONSTANTS } from '../lib/forgetters';
+import {
+  applyStrengthToEnemyDelta,
+  applyDexterityToPlayerDelta,
+  applyIntelligenceToResonance,
+  maxHpFromVitality,
+  maxStaminaFromEnergy,
+  STATS_FALLBACK,
+} from '../lib/stats';
 
 export const combatRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -38,10 +46,37 @@ function clamp(n: number, min: number, max: number): number {
 }
 
 combatRouter.post('/start', async (c) => {
+  const userId = getCurrentUserId(c) ?? 'anonymous';
+  // 사용자 wiki 에서 스탯 추출 — 분석 안 했으면 default
+  let playerStats = STATS_FALLBACK;
+  if (userId !== 'anonymous') {
+    const wiki = await c.env.DB.prepare(
+      'SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?',
+    )
+      .bind(userId)
+      .first<{ nickname_analysis_json: string }>();
+    if (wiki) {
+      try {
+        const analysis = JSON.parse(wiki.nickname_analysis_json);
+        if (analysis.stats) playerStats = analysis.stats;
+      } catch {
+        /* parse 실패 시 default */
+      }
+    }
+  }
+  const playerMaxHp = maxHpFromVitality(playerStats.vitality);
+  const playerMaxStamina = maxStaminaFromEnergy(playerStats.energy);
+
   return c.json({
     success: true,
     state: {
-      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      player: {
+        hp: playerMaxHp,
+        maxHp: playerMaxHp,
+        stamina: playerMaxStamina,
+        maxStamina: playerMaxStamina,
+        stats: playerStats,
+      },
       enemy: { ...FORGETTER_OF_CHILDHOOD },
       turn: 0,
       resonance: 0,
@@ -180,22 +215,37 @@ combatRouter.post('/turn', async (c) => {
     }
   }
 
-  // 새 state 계산 (룰 기반 — 클라이언트가 보낸 state + delta)
+  // 5 스탯 룰 적용 (디아블로식)
+  const playerStats = state.player.stats ?? STATS_FALLBACK;
+  const enemyStats = state.enemy.stats ?? STATS_FALLBACK;
+
+  // 힘 → 적 HP delta 보정 (사용자 데미지)
+  const adjustedEnemyDelta = applyStrengthToEnemyDelta(result.enemyHpDelta, playerStats.strength);
+  // 민첩 → 적 반격 (회피·선제공격)
+  const playerImpact = applyDexterityToPlayerDelta(result.playerHpDelta, playerStats, enemyStats);
+  // 지능 → 잔잔 보너스
+  const adjustedResonanceDelta = applyIntelligenceToResonance(result.resonanceDelta, playerStats.intelligence);
+
+  const statLog: string[] = [];
+  if (playerImpact.dodged) statLog.push('  ↳ 너의 발이 한 박자 빨랐다 — 회피.');
+  else if (playerImpact.preemptive) statLog.push('  ↳ 너의 결단이 한 박자 앞섰다 — 적의 호선이 흩어진다.');
+
   const nextState = {
     player: {
       ...state.player,
-      hp: clamp(state.player.hp + result.playerHpDelta, 0, state.player.maxHp),
+      hp: clamp(state.player.hp + playerImpact.delta, 0, state.player.maxHp),
     },
     enemy: {
       ...state.enemy,
-      hp: clamp(state.enemy.hp + result.enemyHpDelta, 0, state.enemy.maxHp),
+      hp: clamp(state.enemy.hp + adjustedEnemyDelta, 0, state.enemy.maxHp),
     },
     turn: state.turn + 1,
-    resonance: state.resonance + result.resonanceDelta,
+    resonance: state.resonance + adjustedResonanceDelta,
     log: [
       ...state.log,
       `[${state.turn + 1}턴 · ${action === 'attack' ? '공격' : action === 'dialogue' ? '대화' : '도망'}] ${result.narration}`,
       `  ↳ ${result.enemyNarration}`,
+      ...statLog,
     ],
   };
 

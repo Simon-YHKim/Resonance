@@ -35,6 +35,44 @@ export const RESONANCE_TIER_LABELS: Record<ResonanceTier, string> = {
   origin: '원의 답',
 };
 
+/**
+ * 5 스탯 시스템 — 디아블로식 (1~20).
+ *
+ * - 힘 (strength)      : 공격 데미지 ×(1 + (str-10)/50)
+ * - 민첩 (dexterity)   : 회피 확률 + 선제공격 (적 반격 약화)
+ * - 지능 (intelligence): 잔잔(殘殘) +Δ 보너스 ((int-10)/5)
+ * - 에너지 (energy)    : stamina max = 100 + (energy-10)×5
+ * - 체력 (vitality)    : HP max = 100 + (vit-10)×5
+ *
+ * 닉네임 분석 시 LLM이 *결*에 맞춰 자동 분배 (합 50 권장, 1~20 범위).
+ *
+ * Refs: 2026-05-06 사용자 결정 — 디아블로처럼 5스탯
+ */
+export const StatsSchema = z.object({
+  strength: z.number().int().min(1).max(20),
+  dexterity: z.number().int().min(1).max(20),
+  intelligence: z.number().int().min(1).max(20),
+  energy: z.number().int().min(1).max(20),
+  vitality: z.number().int().min(1).max(20),
+});
+export type Stats = z.infer<typeof StatsSchema>;
+
+export const STATS_DEFAULT: Stats = {
+  strength: 10,
+  dexterity: 10,
+  intelligence: 10,
+  energy: 10,
+  vitality: 10,
+};
+
+export const STAT_LABELS: Record<keyof Stats, string> = {
+  strength: '힘',
+  dexterity: '민첩',
+  intelligence: '지능',
+  energy: '에너지',
+  vitality: '체력',
+};
+
 export const CombatOutcomeSchema = z.enum(['victory', 'defeat', 'fled', 'stalemate']);
 export type CombatOutcome = z.infer<typeof CombatOutcomeSchema>;
 
@@ -44,6 +82,7 @@ export const EnemySchema = z.object({
   encounter: z.string(),
   hp: z.number().int().nonnegative(),
   maxHp: z.number().int().positive(),
+  stats: StatsSchema.optional(),
 });
 
 export const CombatStateSchema = z.object({
@@ -52,6 +91,7 @@ export const CombatStateSchema = z.object({
     maxHp: z.number().int().positive(),
     stamina: z.number().int().nonnegative(),
     maxStamina: z.number().int().positive(),
+    stats: StatsSchema.optional(),
   }),
   enemy: EnemySchema,
   turn: z.number().int().nonnegative(),

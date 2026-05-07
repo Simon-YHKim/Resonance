@@ -17,6 +17,8 @@
  * Refs: 2026-05-06 Design+Story agent 보고
  */
 
+import type { Stats } from '@resonance/shared';
+
 export interface ForgetterDefinition {
   number: 1 | 2 | 3 | 4 | 5;
   theme: string;
@@ -25,8 +27,18 @@ export interface ForgetterDefinition {
   encounter: string;
   hp: number;
   maxHp: number;
+  stats: Stats;
 }
 
+/**
+ * 5체 보스 — 디아블로식 스탯 분배.
+ *
+ * 1체 (이름): 약함, 빠르지 않음 — 사용자가 *이름의 결*을 푸는 자리
+ * 2체 (관계): 머뭇거림, 민첩 낮음, 지능 중
+ * 3체 (꿈): 견딤 높음, 지능 높음 — 미룬 자리의 무게
+ * 4체 (우정): 무리, 힘 + 체력 ↑
+ * 5체 (원의 아이): 모든 스탯 ↑ — *너의 첫 자기* 라 너와 닮은 균형
+ */
 export const FORGETTERS: ForgetterDefinition[] = [
   {
     number: 1,
@@ -38,6 +50,7 @@ export const FORGETTERS: ForgetterDefinition[] = [
       '거리의 끝에서 익숙한 그림자가 일어선다. 목소리가 속삭인다 — "저 자는 너를 어떤 이름으로도 부르지 못한 자다."',
     hp: 60,
     maxHp: 60,
+    stats: { strength: 7, dexterity: 6, intelligence: 8, energy: 7, vitality: 8 },
   },
   {
     number: 2,
@@ -49,6 +62,7 @@ export const FORGETTERS: ForgetterDefinition[] = [
       '광장의 등불 아래, 한 사람이 너를 향해 돌아본다. 그가 너에게 *건네지 못한 인사*가 안개 속에 떠다닌다.',
     hp: 80,
     maxHp: 80,
+    stats: { strength: 8, dexterity: 7, intelligence: 11, energy: 9, vitality: 10 },
   },
   {
     number: 3,
@@ -60,6 +74,7 @@ export const FORGETTERS: ForgetterDefinition[] = [
       '도서관의 마지막 등불 아래, 한 자리가 비어있다. 그 자리에 앉으려다 *돌아선 너*가 있다.',
     hp: 100,
     maxHp: 100,
+    stats: { strength: 8, dexterity: 9, intelligence: 14, energy: 11, vitality: 12 },
   },
   {
     number: 4,
@@ -71,6 +86,7 @@ export const FORGETTERS: ForgetterDefinition[] = [
       '운동장 끝에서 한 무리의 그림자가 일어선다. *네가 마지막으로 손을 놓은 그 날*의 이름들.',
     hp: 120,
     maxHp: 120,
+    stats: { strength: 13, dexterity: 11, intelligence: 10, energy: 12, vitality: 14 },
   },
   {
     number: 5,
@@ -82,6 +98,7 @@ export const FORGETTERS: ForgetterDefinition[] = [
       '회색 운동장의 정중앙. 너는 멈춰 선다. *지우고 시작한 첫 너*가 거기 있었다.',
     hp: 150,
     maxHp: 150,
+    stats: { strength: 14, dexterity: 14, intelligence: 14, energy: 14, vitality: 14 },
   },
 ];
 

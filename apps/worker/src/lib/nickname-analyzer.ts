@@ -47,6 +47,20 @@ export const NICKNAME_ANALYZER_SYSTEM_PROMPT = `당신은 게임 *잔향(Resonan
   "description": "다층 정체성 자유 묘사 (200~600자, 1~3 문단). 직업·연령·환경·정서·관계의 결을 동시에 짚어냄.",
   "safety_concern": "none" | "high",
 
+  // 5 스탯 (디아블로식, 1~20, 합 50 권장 redistribute) — *닉네임의 결*에 맞춰 분배
+  // 힘(strength): 공격력. 거친·확신·결단의 결.
+  // 민첩(dexterity): 회피·선제. 빠른·예민·꺾인 자세의 결.
+  // 지능(intelligence): 잔잔(殘殘) 보너스. 사유·관조·말의 결.
+  // 에너지(energy): 스테미나. 호흡 길이·끈기·일상의 결.
+  // 체력(vitality): HP. 견딤·따뜻함·돌봄의 결.
+  "stats": {
+    "strength": 1~20,
+    "dexterity": 1~20,
+    "intelligence": 1~20,
+    "energy": 1~20,
+    "vitality": 1~20
+  },
+
   // 선택 (있으면 UI 활용, 없어도 동작) — LLM 자유 채움
   "추정직업": "...",
   "추정연령": "...",
@@ -62,7 +76,13 @@ export const NICKNAME_ANALYZER_SYSTEM_PROMPT = `당신은 게임 *잔향(Resonan
     "보스5자리": "..."
   },
   "거점NPC말투": { "차분한가게주인": "..." }
-}`;
+}
+
+스탯 예시:
+- "엄마이자워킹맘" → strength 8, dexterity 7, intelligence 12, energy 8, vitality 15 (돌봄·견딤의 결)
+- "검의그림자" → strength 14, dexterity 13, intelligence 6, energy 9, vitality 8 (결단·예민함)
+- "긴긴밤" → strength 7, dexterity 8, intelligence 13, energy 12, vitality 10 (관조·끈기)
+- "나혼자산다" → strength 9, dexterity 11, intelligence 11, energy 10, vitality 9 (균형 X 약간 외로움 결)`;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 입력 검증

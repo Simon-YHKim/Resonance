@@ -27,6 +27,14 @@ import { LLMError, detectSafetyConcern } from '../lib/nickname-analyzer';
 import { checkBudget, parseBudget } from '../lib/budget-guard';
 import { getForgetter, STORY_CONSTANTS } from '../lib/forgetters';
 import { earnResonanceDust } from './shop';
+import {
+  applyStrengthToEnemyDelta,
+  applyDexterityToPlayerDelta,
+  applyIntelligenceToResonance,
+  maxHpFromVitality,
+  maxStaminaFromEnergy,
+  STATS_FALLBACK,
+} from '../lib/stats';
 
 export const storyRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -132,13 +140,37 @@ storyRouter.post('/start', async (c) => {
   const progress = await getOrCreateProgress(c.env.DB, userId, chapter);
   const enemy = getForgetter(progress.current_boss);
 
+  // 사용자 wiki 에서 스탯 추출
+  let playerStats = STATS_FALLBACK;
+  const wiki = await c.env.DB.prepare(
+    'SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?',
+  )
+    .bind(userId)
+    .first<{ nickname_analysis_json: string }>();
+  if (wiki) {
+    try {
+      const analysis = JSON.parse(wiki.nickname_analysis_json);
+      if (analysis.stats) playerStats = analysis.stats;
+    } catch {
+      /* default */
+    }
+  }
+  const playerMaxHp = maxHpFromVitality(playerStats.vitality);
+  const playerMaxStamina = maxStaminaFromEnergy(playerStats.energy);
+
   return c.json({
     success: true,
     chapter,
     chapterTitle: STORY_CONSTANTS.CHAPTERS[chapter as keyof typeof STORY_CONSTANTS.CHAPTERS] ?? chapter,
     progress,
     state: {
-      player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+      player: {
+        hp: playerMaxHp,
+        maxHp: playerMaxHp,
+        stamina: playerMaxStamina,
+        maxStamina: playerMaxStamina,
+        stats: playerStats,
+      },
       enemy: { ...enemy },
       turn: 0,
       resonance: progress.cumulative_resonance,
@@ -248,21 +280,33 @@ storyRouter.post('/turn', async (c) => {
     }
   }
 
+  // 5 스탯 룰 적용
+  const playerStats = state.player.stats ?? STATS_FALLBACK;
+  const enemyStats = state.enemy.stats ?? STATS_FALLBACK;
+  const adjustedEnemyDelta = applyStrengthToEnemyDelta(result.enemyHpDelta, playerStats.strength);
+  const playerImpact = applyDexterityToPlayerDelta(result.playerHpDelta, playerStats, enemyStats);
+  const adjustedResonanceDelta = applyIntelligenceToResonance(result.resonanceDelta, playerStats.intelligence);
+
+  const statLog: string[] = [];
+  if (playerImpact.dodged) statLog.push('  ↳ 너의 발이 한 박자 빨랐다 — 회피.');
+  else if (playerImpact.preemptive) statLog.push('  ↳ 너의 결단이 한 박자 앞섰다 — 적의 호선이 흩어진다.');
+
   const nextState = {
     player: {
       ...state.player,
-      hp: clamp(state.player.hp + result.playerHpDelta, 0, state.player.maxHp),
+      hp: clamp(state.player.hp + playerImpact.delta, 0, state.player.maxHp),
     },
     enemy: {
       ...state.enemy,
-      hp: clamp(state.enemy.hp + result.enemyHpDelta, 0, state.enemy.maxHp),
+      hp: clamp(state.enemy.hp + adjustedEnemyDelta, 0, state.enemy.maxHp),
     },
     turn: state.turn + 1,
-    resonance: state.resonance + result.resonanceDelta,
+    resonance: state.resonance + adjustedResonanceDelta,
     log: [
       ...state.log,
       `[${state.turn + 1}턴 · ${action === 'attack' ? '공격' : action === 'dialogue' ? '대화' : '도망'}] ${result.narration}`,
       `  ↳ ${result.enemyNarration}`,
+      ...statLog,
     ],
   };
 
@@ -361,11 +405,17 @@ storyRouter.post('/turn', async (c) => {
           ...nextEnemy,
           // 다음 보스 자동 진입 — state 초기화 (HP 풀, turn 0, resonance 이월)
           starterState: {
-            player: { hp: 100, maxHp: 100, stamina: 100, maxStamina: 100 },
+            player: {
+              hp: maxHpFromVitality(playerStats.vitality),
+              maxHp: maxHpFromVitality(playerStats.vitality),
+              stamina: maxStaminaFromEnergy(playerStats.energy),
+              maxStamina: maxStaminaFromEnergy(playerStats.energy),
+              stats: playerStats,
+            },
             enemy: { ...nextEnemy },
             turn: 0,
             resonance: cumulative,
-            log: nextState.log, // 이전 보스 로그 유지 (전 흐름 회고)
+            log: nextState.log,
           },
         }
       : null,

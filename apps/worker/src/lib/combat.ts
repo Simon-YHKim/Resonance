@@ -17,7 +17,7 @@ import {
 } from '@resonance/shared';
 import { LLMError, detectSafetyConcern } from './nickname-analyzer';
 
-// 잊혀진 자 1체 — Phase 1.6 placeholder (Phase 2에서 5체 풀)
+// 잊혀진 자 1체 — 일반 전투 (스토리 외)
 export const FORGETTER_OF_CHILDHOOD = {
   name: '잊혀진 자 — 어린 시절의 잔해',
   description:
@@ -26,6 +26,7 @@ export const FORGETTER_OF_CHILDHOOD = {
     '거리의 끝에서 익숙한 그림자가 일어선다. 목소리가 속삭인다 — "저 자는 너의 어떤 부분을 잊은 자다."',
   hp: 60,
   maxHp: 60,
+  stats: { strength: 8, dexterity: 8, intelligence: 8, energy: 8, vitality: 8 },
 } as const;
 
 /**
@@ -42,6 +43,59 @@ const TIER_GUIDE: Record<ResonanceTier, string> = {
   origin:
     '원의 답 단계 — 화해 직전. 잊혀진 자는 *너의 이름을 부른다*. 대화가 깊은 경음을 만든다.',
 };
+
+/**
+ * dialogue 임계별 보너스 — *그 턴부터* 진입 시 더 강한 효과.
+ */
+const DIALOGUE_BONUS: Record<ResonanceTier, { n: string; e: string; eHp: number; pHp: number; r: number }> = {
+  descend: {
+    n: '너는 묻는다. "…너는 무엇이었지." 잊혀진 자가 처음으로 너를 정면에서 본다.',
+    e: '"…그 자리는 비어있었어." 잊혀진 자가 안개 너머에서 천천히 말한다. 공격 의지가 옅어진다.',
+    eHp: -5,
+    pHp: -2,
+    r: 7,
+  },
+  empathy: {
+    n: '너는 한 마디 건넨다 — 처음으로, 너의 결을 그에게 내준다.',
+    e: '잊혀진 자가 너의 한 마디에 멈춰 선다. *너도 그 자리에 있었어?* 라는 물음이 안개 사이로 흘러나온다.',
+    eHp: -7,
+    pHp: -1,
+    r: 10,
+  },
+  memory: {
+    n: '너는 오래된 기억을 꺼낸다. 그 자리, 그 시간, 그 결.',
+    e: '잊혀진 자가 자기 그림자에 무게를 싣는다. *나도, 그 자리를 잠시 잊고 있었어* 라고 인정한다.',
+    eHp: -10,
+    pHp: 0,
+    r: 14,
+  },
+  origin: {
+    n: '너는 원의 답을 건넨다 — 더는 묻지 않고, 자리에 함께 선다.',
+    e: '잊혀진 자가 처음으로 너의 이름을 부른다. 안개가 한 결씩 걷힌다. 화해가 가까워진다.',
+    eHp: -12,
+    pHp: 0,
+    r: 20,
+  },
+};
+
+/**
+ * dialogue 임계 *그 턴부터* 적용 — 진입 가능한 가장 깊은 tier 시뮬.
+ *
+ * 사용자 결정: 잔잔 28 (descend) + dialogue → 임계 30 도달 시 *그 턴부터* empathy 보너스.
+ * 직전 tier 의 보너스로 시뮬 → 더 깊은 tier 진입 가능 → 그 tier 보너스 적용.
+ *
+ * Refs: 2026-05-06 사용자 결정 (점검 후)
+ */
+function projectDialogueTier(currentResonance: number): ResonanceTier {
+  let tier = getResonanceTier(currentResonance);
+  for (let i = 0; i < 4; i++) {
+    const bonus = DIALOGUE_BONUS[tier].r;
+    const newTier = getResonanceTier(currentResonance + bonus);
+    if (newTier === tier) break;
+    tier = newTier;
+  }
+  return tier;
+}
 
 export const getResonanceTier = sharedGetResonanceTier;
 export { RESONANCE_TIERS, RESONANCE_TIER_LABELS as TIER_LABELS };
@@ -96,8 +150,8 @@ export async function combatTurnWithGemini(
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
   const fetchFn = options.fetch ?? globalThis.fetch;
 
-  const tier = getResonanceTier(state.resonance);
-  // dialogue 액션 시 임계별 가이드 주입 (영혼 4번 — *대화 깊이* 분기)
+  // dialogue 시 *진입할 tier* 기준 (그 턴부터 보너스)
+  const tier = action === 'dialogue' ? projectDialogueTier(state.resonance) : getResonanceTier(state.resonance);
   const tierLine = action === 'dialogue' ? `\n[잔잔 단계 · ${RESONANCE_TIER_LABELS[tier]}]\n${TIER_GUIDE[tier]}` : '';
 
   const userPrompt = `[현재 상태]
@@ -208,44 +262,9 @@ ${userText ? `\n[자유 텍스트]\n"${userText}"` : ''}
 /**
  * Mock — Gemini 키 없거나 실패 시 fallback. 룰 기반 묘사.
  *
- * 자살예방법 §27조의8 — userText 검사 포함 (LLM 없을 때도 위험 신호 차단).
- * dialogue 액션은 잔잔 임계별 보너스 (Design+Story layer 2):
- *   - descend (0~29) : r=7
- *   - empathy (30~59): r=10  (공감 한 마디)
- *   - memory  (60~99): r=14  (오래된 기억)
- *   - origin  (100+) : r=20  (원의 답)
+ * 자살예방법 §27조의8 — userText 검사 포함.
+ * dialogue 액션은 *진입할 tier* 기준 보너스 (그 턴부터).
  */
-const DIALOGUE_BONUS: Record<ResonanceTier, { n: string; e: string; eHp: number; pHp: number; r: number }> = {
-  descend: {
-    n: '너는 묻는다. "…너는 무엇이었지." 잊혀진 자가 처음으로 너를 정면에서 본다.',
-    e: '"…그 자리는 비어있었어." 잊혀진 자가 안개 너머에서 천천히 말한다. 공격 의지가 옅어진다.',
-    eHp: -5,
-    pHp: -2,
-    r: 7,
-  },
-  empathy: {
-    n: '너는 한 마디 건넨다 — 처음으로, 너의 결을 그에게 내준다.',
-    e: '잊혀진 자가 너의 한 마디에 멈춰 선다. *너도 그 자리에 있었어?* 라는 물음이 안개 사이로 흘러나온다.',
-    eHp: -7,
-    pHp: -1,
-    r: 10,
-  },
-  memory: {
-    n: '너는 오래된 기억을 꺼낸다. 그 자리, 그 시간, 그 결.',
-    e: '잊혀진 자가 자기 그림자에 무게를 싣는다. *나도, 그 자리를 잠시 잊고 있었어* 라고 인정한다.',
-    eHp: -10,
-    pHp: 0,
-    r: 14,
-  },
-  origin: {
-    n: '너는 원의 답을 건넨다 — 더는 묻지 않고, 자리에 함께 선다.',
-    e: '잊혀진 자가 처음으로 너의 이름을 부른다. 안개가 한 결씩 걷힌다. 화해가 가까워진다.',
-    eHp: -12,
-    pHp: 0,
-    r: 20,
-  },
-};
-
 export function combatTurnMock(
   state: CombatState,
   action: CombatAction,
@@ -273,8 +292,8 @@ export function combatTurnMock(
       safety_concern: safety,
     };
   }
-  // dialogue — 임계별 분기
-  const v = DIALOGUE_BONUS[getResonanceTier(state.resonance)];
+  // dialogue — 진입할 tier 기준 (그 턴부터 보너스)
+  const v = DIALOGUE_BONUS[projectDialogueTier(state.resonance)];
   return {
     narration: v.n,
     enemyNarration: v.e,
