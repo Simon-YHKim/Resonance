@@ -65,3 +65,44 @@ export function maxHpFromVitality(vit: number, base = 100): number {
 export function maxStaminaFromEnergy(energy: number, base = 100): number {
   return base + (energy - 10) * 5;
 }
+
+/** 회복 아이템 효과 — 체력 보너스 적용 */
+export function recoverHp(rawAmount: number, vit: number): number {
+  return Math.round(rawAmount * (1 + (vit - 10) / 50));
+}
+
+/** 회복 아이템 효과 — 에너지 보너스 적용 */
+export function recoverStamina(rawAmount: number, energy: number): number {
+  return Math.round(rawAmount * (1 + (energy - 10) / 50));
+}
+
+/** 인벤토리 cosmetic stat_bonus → base stats 합산 (장비 효과) */
+export function getEffectiveStats(
+  baseStats: Stats,
+  cosmeticBonuses: Array<Partial<Stats>>,
+): Stats {
+  const out = { ...baseStats };
+  for (const b of cosmeticBonuses) {
+    for (const k of Object.keys(b) as Array<keyof Stats>) {
+      out[k] = Math.min(20, out[k] + (b[k] ?? 0));
+    }
+  }
+  return out;
+}
+
+/** 인벤토리 row → cosmetic stat_bonus 추출 (purchaseable JSON parse) */
+export function extractCosmeticBonuses(
+  inventoryRows: Array<{ category: string; effect_json: string }>,
+): Array<Partial<Stats>> {
+  const bonuses: Array<Partial<Stats>> = [];
+  for (const row of inventoryRows) {
+    if (row.category !== 'cosmetic') continue;
+    try {
+      const e = JSON.parse(row.effect_json) as { stat_bonus?: Partial<Stats> };
+      if (e.stat_bonus) bonuses.push(e.stat_bonus);
+    } catch {
+      /* ignore */
+    }
+  }
+  return bonuses;
+}

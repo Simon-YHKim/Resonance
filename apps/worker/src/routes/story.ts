@@ -33,8 +33,39 @@ import {
   applyIntelligenceToResonance,
   maxHpFromVitality,
   maxStaminaFromEnergy,
+  getEffectiveStats,
+  extractCosmeticBonuses,
   STATS_FALLBACK,
 } from '../lib/stats';
+import type { Stats } from '@resonance/shared';
+
+async function loadEffectivePlayerStats(
+  db: D1Database,
+  userId: string,
+): Promise<Stats> {
+  const wiki = await db
+    .prepare('SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?')
+    .bind(userId)
+    .first<{ nickname_analysis_json: string }>();
+  let baseStats: Stats = STATS_FALLBACK;
+  if (wiki) {
+    try {
+      const a = JSON.parse(wiki.nickname_analysis_json);
+      if (a.stats) baseStats = a.stats;
+    } catch {
+      /* default */
+    }
+  }
+  const inv = await db
+    .prepare(
+      `SELECT s.category, s.effect_json
+       FROM user_inventory i JOIN shop_items s ON s.item_id = i.item_id
+       WHERE i.user_id = ? AND i.quantity > 0 AND s.category = 'cosmetic'`,
+    )
+    .bind(userId)
+    .all<{ category: string; effect_json: string }>();
+  return getEffectiveStats(baseStats, extractCosmeticBonuses(inv.results ?? []));
+}
 
 export const storyRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -140,21 +171,7 @@ storyRouter.post('/start', async (c) => {
   const progress = await getOrCreateProgress(c.env.DB, userId, chapter);
   const enemy = getForgetter(progress.current_boss);
 
-  // 사용자 wiki 에서 스탯 추출
-  let playerStats = STATS_FALLBACK;
-  const wiki = await c.env.DB.prepare(
-    'SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?',
-  )
-    .bind(userId)
-    .first<{ nickname_analysis_json: string }>();
-  if (wiki) {
-    try {
-      const analysis = JSON.parse(wiki.nickname_analysis_json);
-      if (analysis.stats) playerStats = analysis.stats;
-    } catch {
-      /* default */
-    }
-  }
+  const playerStats = await loadEffectivePlayerStats(c.env.DB, userId);
   const playerMaxHp = maxHpFromVitality(playerStats.vitality);
   const playerMaxStamina = maxStaminaFromEnergy(playerStats.energy);
 

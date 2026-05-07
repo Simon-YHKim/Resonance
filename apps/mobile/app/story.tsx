@@ -231,6 +231,25 @@ export default function StoryScreen() {
           <Text className="text-fg-dim text-[11px] mt-1">
             HP {state.enemy.hp} / {state.enemy.maxHp}
           </Text>
+          {state.enemy.stats && state.player.stats ? (() => {
+            const ps = state.player.stats;
+            const es = state.enemy.stats;
+            const dodgePct = Math.round(Math.max(0, Math.min(0.3, (ps.dexterity - es.dexterity) / 100 + 0.05)) * 100);
+            const preemptive = ps.dexterity >= es.dexterity + 3;
+            return (
+              <View className="flex-row mt-2 gap-3">
+                <Text className="text-fg-dim text-[10px]">
+                  적 민첩 <Text className="text-fg-muted">{es.dexterity}</Text>
+                </Text>
+                <Text className="text-fg-dim text-[10px]">
+                  회피 <Text className="text-resonance">{dodgePct}%</Text>
+                </Text>
+                {preemptive ? (
+                  <Text className="text-resonance text-[10px]">선제 가능</Text>
+                ) : null}
+              </View>
+            );
+          })() : null}
         </View>
 
         <View className="mb-4 border border-resonance/30 rounded-lg p-4">

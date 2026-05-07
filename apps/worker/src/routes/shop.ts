@@ -14,6 +14,8 @@ import { Hono } from 'hono';
 import type { Bindings } from '../types/bindings';
 import { getCurrentUserId, ensureUserExists } from '../middleware/auth';
 import { addStamina } from '../lib/stamina';
+import { recoverHp, STATS_FALLBACK } from '../lib/stats';
+import type { Stats } from '@resonance/shared';
 
 export const shopRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -160,6 +162,35 @@ shopRouter.post('/purchase', async (c) => {
   // 효과 적용
   if (item.category === 'stamina_potion' && typeof effect.stamina === 'number') {
     await addStamina(c.env.DB, userId, effect.stamina);
+  } else if (item.category === 'stat_boost') {
+    // 영구 +1 — user_wiki.nickname_analysis_json.stats 패치
+    const wiki = await c.env.DB.prepare(
+      'SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?',
+    )
+      .bind(userId)
+      .first<{ nickname_analysis_json: string }>();
+    if (!wiki) {
+      return c.json(
+        { success: false, error: '먼저 닉네임을 분석해주세요.', code: 'NO_WIKI' },
+        404,
+      );
+    }
+    const analysis = JSON.parse(wiki.nickname_analysis_json) as { stats?: Stats };
+    const stat = String(effect.stat) as keyof Stats;
+    const amount = Number(effect.amount ?? 1);
+    const baseStats = analysis.stats ?? { ...STATS_FALLBACK };
+    baseStats[stat] = Math.min(20, baseStats[stat] + amount);
+    analysis.stats = baseStats;
+    await c.env.DB.prepare(
+      'UPDATE user_wiki SET nickname_analysis_json = ?, updated_at = ? WHERE user_id = ?',
+    )
+      .bind(JSON.stringify(analysis), now, userId)
+      .run();
+  } else if (item.category === 'recovery' && typeof effect.hp === 'number') {
+    // HP 회복 — 다음 전투 시작 시 maxHp 까지 fully restored 이므로 *지연 적립*: 인벤토리에 stash
+    // 단순화: 즉시 효과 X (다음 combat/start가 maxHp로 시작). 인벤토리에 추가 안 함.
+    // → 향후 combat 중 *재충전* 액션 도입 시 사용. 현재는 *마음의 한 잔* 으로 dust → stamina 회복으로 대체:
+    await addStamina(c.env.DB, userId, effect.hp);
   } else {
     // 인벤토리 추가 (cosmetic / reroll_token / story_chapter / code_slot)
     await c.env.DB.prepare(

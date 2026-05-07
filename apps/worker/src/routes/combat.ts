@@ -11,6 +11,7 @@ import {
   CombatStateSchema,
   CombatTurnRequestSchema,
   type CombatOutcome,
+  type Stats,
 } from '@resonance/shared';
 import { Bindings } from '../types/bindings';
 import {
@@ -32,8 +33,41 @@ import {
   applyIntelligenceToResonance,
   maxHpFromVitality,
   maxStaminaFromEnergy,
+  getEffectiveStats,
+  extractCosmeticBonuses,
   STATS_FALLBACK,
 } from '../lib/stats';
+
+async function loadEffectivePlayerStats(
+  db: D1Database,
+  userId: string,
+): Promise<Stats> {
+  if (userId === 'anonymous') return STATS_FALLBACK;
+  const wiki = await db
+    .prepare('SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?')
+    .bind(userId)
+    .first<{ nickname_analysis_json: string }>();
+  let baseStats: Stats = STATS_FALLBACK;
+  if (wiki) {
+    try {
+      const analysis = JSON.parse(wiki.nickname_analysis_json);
+      if (analysis.stats) baseStats = analysis.stats;
+    } catch {
+      /* default */
+    }
+  }
+  // cosmetic stat_bonus 합산
+  const inv = await db
+    .prepare(
+      `SELECT s.category, s.effect_json
+       FROM user_inventory i JOIN shop_items s ON s.item_id = i.item_id
+       WHERE i.user_id = ? AND i.quantity > 0 AND s.category = 'cosmetic'`,
+    )
+    .bind(userId)
+    .all<{ category: string; effect_json: string }>();
+  const bonuses = extractCosmeticBonuses(inv.results ?? []);
+  return getEffectiveStats(baseStats, bonuses);
+}
 
 export const combatRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -47,23 +81,7 @@ function clamp(n: number, min: number, max: number): number {
 
 combatRouter.post('/start', async (c) => {
   const userId = getCurrentUserId(c) ?? 'anonymous';
-  // 사용자 wiki 에서 스탯 추출 — 분석 안 했으면 default
-  let playerStats = STATS_FALLBACK;
-  if (userId !== 'anonymous') {
-    const wiki = await c.env.DB.prepare(
-      'SELECT nickname_analysis_json FROM user_wiki WHERE user_id = ?',
-    )
-      .bind(userId)
-      .first<{ nickname_analysis_json: string }>();
-    if (wiki) {
-      try {
-        const analysis = JSON.parse(wiki.nickname_analysis_json);
-        if (analysis.stats) playerStats = analysis.stats;
-      } catch {
-        /* parse 실패 시 default */
-      }
-    }
-  }
+  const playerStats = await loadEffectivePlayerStats(c.env.DB, userId);
   const playerMaxHp = maxHpFromVitality(playerStats.vitality);
   const playerMaxStamina = maxStaminaFromEnergy(playerStats.energy);
 

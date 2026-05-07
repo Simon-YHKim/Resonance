@@ -104,7 +104,7 @@ export default function CombatScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
     <ScrollView className="flex-1" contentContainerStyle={{ padding: 24, paddingTop: 48 }} keyboardShouldPersistTaps="handled">
-      {/* 적 정보 */}
+      {/* 적 정보 + 스탯 비교 */}
       <View className="mb-4 border border-fg-dim/20 rounded-lg p-4">
         <Text className="text-fg-dim text-[10px] tracking-[0.3em] uppercase mb-1">
           잊혀진 자
@@ -116,6 +116,25 @@ export default function CombatScreen() {
         <Text className="text-fg-dim text-[11px] mt-1">
           HP {combat.enemy.hp} / {combat.enemy.maxHp}
         </Text>
+        {combat.enemy.stats && combat.player.stats ? (() => {
+          const ps = combat.player.stats;
+          const es = combat.enemy.stats;
+          const dodgePct = Math.round(Math.max(0, Math.min(0.3, (ps.dexterity - es.dexterity) / 100 + 0.05)) * 100);
+          const preemptive = ps.dexterity >= es.dexterity + 3;
+          return (
+            <View className="flex-row mt-2 gap-3">
+              <Text className="text-fg-dim text-[10px]">
+                적 민첩 <Text className="text-fg-muted">{es.dexterity}</Text>
+              </Text>
+              <Text className="text-fg-dim text-[10px]">
+                회피 <Text className="text-resonance">{dodgePct}%</Text>
+              </Text>
+              {preemptive ? (
+                <Text className="text-resonance text-[10px]">선제 가능</Text>
+              ) : null}
+            </View>
+          );
+        })() : null}
       </View>
 
       {/* 플레이어 정보 */}
