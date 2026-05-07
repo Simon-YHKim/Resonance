@@ -4,16 +4,22 @@
   "private": true,
   "description": "잔향(Resonance: Echoes of a Forgotten Self) - LLM-driven GPS text MMORPG",
   "scripts": {
-    "dev": "pnpm --filter ./client dev",
-    "dev:worker": "pnpm --filter ./worker dev",
-    "build": "pnpm --filter ./client build",
+    "dev": "pnpm --filter @resonance/mobile start",
+    "dev:worker": "pnpm --filter @resonance/worker dev",
+    "dev:mobile": "pnpm --filter @resonance/mobile start",
+    "build": "pnpm --filter @resonance/mobile export:web",
+    "build:mobile": "pnpm --filter @resonance/mobile export:web",
     "test": "pnpm -r test",
-    "test:client": "pnpm --filter ./client test",
-    "test:worker": "pnpm --filter ./worker test",
-    "test:coverage": "pnpm --filter ./worker test:coverage",
+    "test:worker": "pnpm --filter @resonance/worker test",
+    "test:shared": "pnpm --filter @resonance/shared test",
+    "test:coverage": "pnpm --filter @resonance/worker test:coverage",
     "typecheck": "pnpm -r typecheck",
-    "typecheck:client": "pnpm --filter ./client typecheck",
-    "typecheck:worker": "pnpm --filter ./worker typecheck"
+    "typecheck:worker": "pnpm --filter @resonance/worker typecheck",
+    "typecheck:mobile": "pnpm --filter @resonance/mobile typecheck",
+    "typecheck:shared": "pnpm --filter @resonance/shared typecheck"
   },
-  "packageManager": "pnpm@10.33.0"
+  "packageManager": "pnpm@10.33.0",
+  "devDependencies": {
+    "localtunnel": "^2.0.2"
+  }
 }

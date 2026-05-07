@@ -1,0 +1,256 @@
+openapi: 3.0.3
+info:
+  title: 잔향(Resonance) Worker API
+  description: |
+    LLM 기반 GPS 텍스트 RPG 잔향의 Cloudflare Worker.
+    Phase 1: 닉네임 분석 + user_wiki 컨텍스트.
+  version: 1.0.0-phase1
+  contact:
+    name: Simon-YHKim
+    url: https://github.com/Simon-YHKim/Resonance
+
+servers:
+  - url: http://localhost:8787
+    description: 로컬 개발 (wrangler dev)
+  - url: https://resonance-worker.<account>.workers.dev
+    description: 프로덕션 (Cloudflare)
+
+paths:
+  /api/health:
+    get:
+      summary: 헬스체크
+      tags: [Health]
+      responses:
+        '200':
+          description: 워커 활성
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name: { type: string, example: resonance-worker }
+                  phase: { type: integer, example: 1 }
+                  status: { type: string, example: live }
+                  endpoints: { type: array, items: { type: string } }
+
+  /api/character/analyze:
+    post:
+      summary: 닉네임 → user_wiki 분석·저장
+      description: |
+        닉네임을 LLM (Claude Haiku 4.5) 으로 분석해 user_wiki 에 저장.
+        ANTHROPIC_API_KEY 미설정 시 자동 Mock fallback.
+
+        rate limit: 사용자당 시간당 5회.
+      tags: [Character]
+      security:
+        - DevUserId: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nickname]
+              properties:
+                nickname:
+                  type: string
+                  minLength: 1
+                  maxLength: 20
+                  description: 한글·영문·숫자·공백·언더스코어·하이픈만 허용
+                  example: 회사다니기싫은김대리
+      responses:
+        '200':
+          description: 분석 + 저장 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyzeSuccess'
+        '400':
+          description: 잘못된 입력
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_nickname:
+                  value: { success: false, error: 닉네임은 1~20자여야 합니다., code: INVALID_NICKNAME }
+                invalid_body:
+                  value: { success: false, error: JSON body 가 필요합니다., code: INVALID_BODY }
+        '401':
+          description: 인증 없음 (X-Dev-User-Id 헤더 누락)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '429':
+          description: rate limit 초과 (시간당 5회)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      retry_after_ms: { type: integer }
+        '500':
+          description: LLM 호출 실패 (fallback 미설정 시)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /api/character/wiki:
+    get:
+      summary: 현재 사용자의 user_wiki 조회
+      tags: [Character]
+      security:
+        - DevUserId: []
+      responses:
+        '200':
+          description: wiki 존재
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: { type: boolean }
+                  user_wiki:
+                    type: object
+                    properties:
+                      user_id: { type: string }
+                      nickname_analysis: { $ref: '#/components/schemas/NicknameAnalysis' }
+                      milestones: { type: array }
+                      gaehwa_axis: { type: integer }
+                      yeojeon_axis: { type: integer }
+                      hangno_axis: { type: integer }
+                      axis_locked_at: { type: integer, nullable: true }
+                      created_at: { type: integer }
+                      updated_at: { type: integer }
+        '401':
+          description: 인증 없음
+        '404':
+          description: wiki 없음 (analyze 먼저 호출 필요)
+
+components:
+  securitySchemes:
+    DevUserId:
+      description: |
+        Phase 1 placeholder. 헤더 X-Dev-User-Id 에 user_id 직접 입력.
+        Phase 1.5 에서 Clerk JWT (Authorization: Bearer ...) 로 교체.
+      type: apiKey
+      in: header
+      name: X-Dev-User-Id
+
+  schemas:
+    NicknameAnalysis:
+      description: |
+        Phase 1.7 자유 분석 모드 — wire format 한국어 키 유지.
+
+        category enum 제거 (사람을 알파벳으로 분류 X).
+        분석 부가 필드 (직업·연령·환경·정서·키워드·스토리매칭·NPC말투) 모두 OPTIONAL.
+        필수 3필드: the_Voice_호칭, description, safety_concern.
+
+        safety_concern: 자살예방법 §27조의8 — 'high' 시 1393 안내 모달 트리거.
+      type: object
+      required:
+        - nickname
+        - the_Voice_호칭
+        - description
+        - safety_concern
+      properties:
+        nickname:
+          type: string
+          maxLength: 20
+        the_Voice_호칭:
+          type: string
+          maxLength: 40
+          description: the Voice 가 사용자를 부를 호칭 (1~10자, 시적·정체성)
+          example: "두 세계의 경계인"
+        description:
+          type: string
+          minLength: 1
+          maxLength: 800
+          description: LLM 자유 텍스트 다층 묘사 (200~600자 권장)
+          example: "낮에는 차가운 사무실의 부속품으로, 밤에는 온기를 잃지 않으려는 안식처의 기둥…"
+        safety_concern:
+          type: string
+          enum: [none, high]
+          description: |
+            자살예방법 §27조의8 안전 트리거.
+            'high' 시 앱이 1393/1388/1577-0199 안내 모달 표시.
+            서버 측 2차 keyword check (LLM false negative 방어) 적용.
+        추정직업:
+          type: string
+          maxLength: 40
+          example: 사무직 근로자
+        추정연령:
+          type: string
+          maxLength: 20
+        추정환경:
+          type: string
+          maxLength: 40
+        정서적결:
+          type: string
+          maxLength: 40
+        주요키워드:
+          type: array
+          items: { type: string, maxLength: 20 }
+          maxItems: 10
+        스토리매칭:
+          type: object
+          description: 5체 보스 자리 (Phase 2 격하 — LLM 자유 채움)
+          properties:
+            보스1자리: { type: string, maxLength: 80 }
+            보스1회상: { type: string, maxLength: 120 }
+            보스2자리: { type: string, maxLength: 80 }
+            보스3자리: { type: string, maxLength: 80 }
+            보스4자리: { type: string, maxLength: 80 }
+            보스5자리: { type: string, maxLength: 80 }
+        거점NPC말투:
+          type: object
+          additionalProperties: { type: string, maxLength: 200 }
+
+    AnalyzeSuccess:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        user_wiki:
+          type: object
+          properties:
+            user_id: { type: string }
+            nickname_analysis: { $ref: '#/components/schemas/NicknameAnalysis' }
+            nickname_code:
+              type: string
+              pattern: '^[2-9A-HJ-NP-Z]{6}$'
+              description: |
+                Phase 1.6 잔향 코드 (6자리 base32, 0/1/I/O 제외 알파벳).
+                analyze 후 자동 발급. 친구 공유로 by-code 조회 가능.
+              example: "5PVCYY"
+        meta:
+          type: object
+          properties:
+            model: { type: string, example: gemini-flash-lite-latest }
+            input_tokens: { type: integer }
+            output_tokens: { type: integer }
+            cost_usd: { type: number }
+
+    ErrorResponse:
+      type: object
+      required: [success, error, code]
+      properties:
+        success: { type: boolean, example: false }
+        error: { type: string }
+        code:
+          type: string
+          enum:
+            - INVALID_NICKNAME
+            - INVALID_BODY
+            - UNAUTHORIZED
+            - RATE_LIMITED
+            - LLM_ERROR
+            - NO_WIKI
+            - SERVER_ERROR
+
+tags:
+  - name: Health
+    description: 워커 상태
+  - name: Character
+    description: 캐릭터 분석 + user_wiki

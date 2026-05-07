@@ -4,6 +4,60 @@
 
 ---
 
+## [Phase 1.7] — 2026-05-06 (자유 분석 모드)
+
+### Changed — Schema 자유화 (사람을 알파벳으로 분류 X)
+- `NicknameAnalysisSchema`: `category` enum **제거** (A·B·C·D·E·F·G·H 8종 폐기)
+- 분석 부가 필드 (직업·연령·환경·정서·키워드·스토리매칭·NPC말투) **모두 OPTIONAL** — LLM 자율
+- 새 필수 3필드: `the_Voice_호칭` · `description` (200~600자) · `safety_concern` (`none`|`high`)
+- `toAlias`/`fromAlias` 영문 헬퍼 제거
+
+### Added — 자살예방법 §27조의8 안전선
+- `safety_concern` 필드 (NicknameAnalysis + CombatLLMResponse 양쪽)
+- LLM 프롬프트: 자해·자살 직접 어휘·강한 암시 시 `high`, 단순 우울·체념은 `none`
+- mobile-html + Expo 양쪽: `safety_concern=high` 시 1393 안내 모달 (자살예방상담)
+
+### Added — Expo apps/mobile 풀 게임 흐름
+- `app/character.tsx`: 잔향이 본 너 (description) + 잔향 코드 + Share API + safety 배너
+- `app/combat.tsx`: HP 바 + 3 액션 + 자유 텍스트 (200자) + 턴 로그
+- `app/result.tsx`: 4결말 카드 + 전체 로그
+- `src/components/SafetyModal.tsx`: 1393 안내 (Linking.openURL('tel:1393'))
+- `gameStore`: combat·outcome·safetyHigh·nicknameCode 확장
+
+### Added — `packages/shared/src/client`
+- `combatStart()` / `combatTurn(state, action, userText?)` / `getByCode(code)`
+- `CombatStartBody` / `CombatTurnBody` export
+- `AnalyzeSuccessBody.user_wiki.nickname_code`
+
+### Fixed — `/api/character/by-code/:code`
+- 응답에서 옛 `category` 필드 제거 (자유 분석 schema 호환)
+- `safety_concern` 비공개 처리 (코드로 다른 사람 위험 노출 X)
+- `the_Voice_호칭` + `description` 공개 추가
+
+---
+
+## [Phase 1.6] — 2026-05-06 (전투 + 잔향 코드)
+
+### Added — 잊혀진 자 5턴 전투
+- `POST /api/combat/start` — 초기 state (player HP 100 / enemy HP 60)
+- `POST /api/combat/turn` — Gemini Flash-Lite 묘사 + 룰 기반 데미지
+- 4결말 (`victory`/`defeat`/`fled`/`stalemate`) + 5턴 한도
+- 자유 텍스트 입력 (max 200자) — 사용자 결이 묘사에 반영
+
+### Added — plan9.kr/battle 영감 (잔향 코드)
+- migration 0009 + 6자리 base32 UNIQUE (0/1/I/O 제외 — 사람이 읽기 쉬운 알파벳)
+- `GET /api/character/code` (자기 코드 발급/조회)
+- `GET /api/character/by-code/:code` (익명 wiki 조회)
+- analyze 응답에 `nickname_code` 자동 포함
+
+### Added — paid-api-guard 일일 비용 캡
+- `src/lib/budget-guard.ts`: 사용자 $0.10/24h · 전 시스템 $1.00/24h
+- `character/analyze`: 캡 도달 시 429 BUDGET_EXCEEDED ("오늘 잔향이 잦아드는 시간")
+- `combat/turn`: 캡 도달 시 mock 강제
+- `combat/turn` rate limit: 시간당 30턴 (5턴 × 6배틀)
+
+---
+
 ## [Phase 1] — 2026-05-06
 
 ### Added — Worker (Cloudflare D1 + Hono)

@@ -1,0 +1,38 @@
+# 잔향 Worker — 개발 환경변수 (wrangler dev 가 자동 로드)
+#
+# 사용법:
+#   1. cp worker/.dev.vars.example worker/.dev.vars
+#   2. 아래 값들을 실제 키로 채움
+#   3. wrangler dev 로 로컬 실행
+#
+# ⚠ 절대 .dev.vars 를 git 에 커밋하지 마세요. (.gitignore 등록 확인)
+# 프로덕션은 `wrangler secret put` 으로 등록.
+
+# ─────────────────────────────────────────────────────────────────────────
+# LLM API Keys — 사용할 모델에 해당하는 키 1개 이상 채움 (둘 다 가능)
+# ─────────────────────────────────────────────────────────────────────────
+
+# Anthropic Console (https://console.anthropic.com/) 에서 발급
+ANTHROPIC_API_KEY=sk-ant-api03-...
+
+# Google AI Studio (https://aistudio.google.com/) 에서 발급 — Gemini Flash-Lite
+# ⚠ 채팅·로그·스크린샷에 절대 평문 노출 금지. 노출 시 즉시 콘솔에서 회전.
+GEMINI_API_KEY=AIza...
+
+# 미설정 시 자동 mock fallback (로컬 개발 friendly)
+
+# ─────────────────────────────────────────────────────────────────────────
+# 모델 라우팅 (vars — 시크릿 X). wrangler.toml 에 default 값 있음.
+# ─────────────────────────────────────────────────────────────────────────
+# 'claude-haiku-4-5'         → Anthropic Haiku 4.5
+# 'gemini-flash-lite-latest' → Google Gemini 2.5 Flash-Lite
+# 'mock'                     → 룰 기반 mock (LLM 호출 없음)
+JANSAE_LLM_PRIMARY_MODEL=gemini-flash-lite-latest
+JANSAE_LLM_FALLBACK_MODEL=mock
+
+# ─────────────────────────────────────────────────────────────────────────
+# Phase 1.5+ (활성화 시 채움)
+# ─────────────────────────────────────────────────────────────────────────
+
+# CLERK_SECRET_KEY=sk_test_...                  # Phase 1.5 인증 통합
+# CLOUDFLARE_AI_GATEWAY_URL=https://gateway.ai.cloudflare.com/v1/<account>/<gateway>

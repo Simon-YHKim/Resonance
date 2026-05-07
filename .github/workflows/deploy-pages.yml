@@ -1,0 +1,66 @@
+name: Deploy Pages (Expo Web)
+
+# Cloudflare Pages 자동 배포 (Expo Web export).
+#
+# - main push → production deployment (resonance-mobile.pages.dev)
+# - 그 외 branch push → preview deployment ({branch}.resonance-mobile.pages.dev)
+# - PR → 빌드 검증만
+#
+# 필요 secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  — User API Token (Pages:Edit + Workers:Edit 스코프)
+#   CLOUDFLARE_ACCOUNT_ID — Cloudflare 계정 ID (대시보드 우상단)
+#   EXPO_PUBLIC_WORKER_BASE_URL — https://resonance-worker.<account>.workers.dev (옵션, 기본값 있음)
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+  deployments: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Expo Web export
+        env:
+          EXPO_PUBLIC_WORKER_BASE_URL: ${{ secrets.EXPO_PUBLIC_WORKER_BASE_URL || 'https://resonance-worker.hwanydanh.workers.dev' }}
+        run: pnpm --filter @resonance/mobile export:web
+
+      # PR 은 빌드 검증만 (deploy X)
+      - name: Cloudflare Pages deploy
+        if: github.event_name == 'push'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy apps/mobile/dist --project-name=resonance-mobile --branch=${{ github.ref_name }} --commit-dirty=true
